@@ -19,7 +19,7 @@ la $a0, test_data
 addiu $t1, $a0, 5    # Get the address of the 6th character (index 5)
 lb $t2, 0($t1)       # Load the ASCII value into $t2
     
-addi $s0, $zero, 28 #ENVIRONMENT VARIABLE DO NOT USE S0 REGISTER
+
 
 
 addi $a0, $zero, 1
@@ -57,8 +57,6 @@ LOOP_1:
 	# jal READ_CHAR
 	# move $a0, $v0
 	# jal PRINT
-
-
 	move $t0, $zero
 
 	### while (j < 3070) ###
@@ -67,37 +65,59 @@ LOOP_1:
 		slti $t1, $t0, 3072
 		beq $t1, $zero, EXIT_LOOP_2
 	### while (j < 3070) ###
-
-
 		jal READ_CHAR
 		move $s3, $v0
+		#move $s6, $v0
 		lb $s3, ($s3)
 
-		subi $s3, $s3, 120
-		bne $s3, $zero, LOOP_2
+		# subi $a0, $zero, 1
+		# jal PRINT_INT
+		# move $a0, $s3
+		# jal PRINT_INT
 
-		move $s4, $zero
+		subi $s7, $s3, 48	# the ascii value of x: 48
 
-		### 8 kere say ###
+		bne $s7, $zero, LOOP_2
+
+		move $s4, $zero # index for LOOP3, i = 0
+		move $s7, $zero # concat integer, currently 0
+		addi $t7, $zero, 28 # sll amount, 28 in the first iteration, 24 in the second,...
+		
+	
+		jal READ_CHAR
+
+		## 8 kere say ###
 		LOOP_3:
-		slti $s5, $s4, 8
-		beq $s5, $zero, END_LOOP_3
-		### 8 kere say ###
+			slti $s5, $s4, 8  # $s5 = 1 if i < 8
+			beq $s5, $zero, END_LOOP_3 # if $s5 is 0, meaning that i >= 8, terminate the loop
 
-		move $a0, $s4
-		jal PRINT_INT
+			jal READ_CHAR
+			move $s3, $v0
 
-		addi $s4, $s4, 1
-		### son 8 kere say ###
+			sllv $s3, $s3, $t7 # shift the int that is read to the left by the shift amount 
+			or $s7, $s7, $s3 # logical or will concatenate the integer values and will turn the hexa number to binary
+
+
+			addi $t7, $t7, -4 # shift amount -= 4
+			addi $s4, $s4, 1 # i += 1
+
+			
+		
+
+
+
 		j LOOP_3
 		END_LOOP_3:
-		### son 8 kere say ###
 
+		addi $t7, $zero, 1
+		li $t0, 3
+		sll $t7, $t7, $t0
 
+		move $a0, $t7
+		jal PRINT_INT
 
 
 		
-
 
 	### endwhile (j < 3070) ###
 	jal LOOP_2
@@ -174,28 +194,17 @@ jr $ra
 
 
 CONCAT:
-sub $sp, $sp, 12   # we adjust the stack for saving return address and argument
-sw  $ra, 8($sp)   # stores the return address in stack
-sw  $a0, 4($sp)   # stores the argument in stack
-sw  $a1, 0($sp)   # stores the argument in stack
+sub $sp, $sp, 4   # we adjust the stack for saving return address and argument
+sw  $ra, 0($sp)   # stores the return address in stack
 
-move $t0, $zero # integer to hold the concat result
-
-sllv $a0, $a0, $s0
+sllv $s3, $s3, $s0
 subi $s0, $s0, 4
 
-sllv $a1, $a1, $s0
-subi $s0, $s0, 4
+or $s5, $s5, $s3
 
-or $t0, $t0, $a0
-or $t0, $t0, $a1
+sw  $ra, 0($sp)   
+sub $sp, $sp, -4   # we adjust the stack for saving return address and argument
 
-move $v0, $t0
-
-lw  $ra, 8($sp)   # stores the return address in stack
-lw  $a0, 4($sp)   # stores the argument in stack
-lw  $a1, 0($sp)   # stores the argument in stack
-sub $sp, $sp, -12   # we adjust the stack for saving return address and argument
 
 jr $ra
 
