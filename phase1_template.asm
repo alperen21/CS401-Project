@@ -40,46 +40,83 @@ lb $t1, 0($t0)
 
 move $t2, $zero #read boolean value
 
-jal READ_CHAR
-jal READ_CHAR
-
-
-
 move $t3, $zero
+
+
+move $t4, $zero
+
+
+### while (int i < 4)###
+jal OPEN_FILE
 LOOP_1:
-	slti $t4, $t3, 3069
-	beq $t4, $zero, EXIT_LOOP_1
+	slti $t5, $t4, 4
+	beq $t5, $zero, EXIT_LOOP_1
+### while (int i < 4)###
 
 
-	move $t4, $zero
+	# jal READ_CHAR
+	# move $a0, $v0
+	# jal PRINT
+
+
+	move $t0, $zero
+
+	### while (j < 3070) ###
 	LOOP_2:
-		slti $t5, $t4, 8
-		beq $t5, $zero, EXIT_LOOP_2
+		addi $t0, $t0, 1
+		slti $t1, $t0, 3072
+		beq $t1, $zero, EXIT_LOOP_2
+	### while (j < 3070) ###
+
 
 		jal READ_CHAR
-		move $a0, $v0
-		jal PRINT
+		move $s3, $v0
+		lb $s3, ($s3)
 
+		subi $s3, $s3, 120
+		bne $s3, $zero, LOOP_2
+
+		move $s4, $zero
+
+		### 8 kere say ###
+		LOOP_3:
+		slti $s5, $s4, 8
+		beq $s5, $zero, END_LOOP_3
+		### 8 kere say ###
+
+		move $a0, $s4
+		jal PRINT_INT
+
+		addi $s4, $s4, 1
+		### son 8 kere say ###
+		j LOOP_3
+		END_LOOP_3:
+		### son 8 kere say ###
+
+
+
+
+		
+
+
+	### endwhile (j < 3070) ###
+	jal LOOP_2
 	EXIT_LOOP_2:
-
-	move $t4, $zero
-	LOOP_3:
-		slti $t5, $t4, 4
-		beq $t5, $zero, EXIT_LOOP_3
-
-		#do nothing
-		jal READ_CHAR
-
-	EXIT_LOOP_3:
-
+	### endwhile (j < 3070) ###
 	
 
-	addi $t3, $t3, 1
+	addi $t4, $t4, 1
+
+### endwhile (int i < 4)###
+	jal LOOP_1
 EXIT_LOOP_1:
+### endwhile (int i < 4)###
+
+lw  $ra, 0($sp) 
+addi $sp, $sp, 4   # we adjust the stack for saving return address and argument
 jr $ra
 
-
-READ_CHAR:
+OPEN_FILE:
 #open a file for writing
 sub $sp, $sp, 4   # we adjust the stack for saving return address and argument
 sw  $ra, 0($sp) 
@@ -91,11 +128,19 @@ li   $a2, 0
 syscall            # open a file (file descriptor returned in $v0)
 move $s6, $v0      # save the file descriptor 
 
+lw  $ra, 0($sp) 
+sub $sp, $sp, -4   # we adjust the stack for saving return address and argument
+
+jr $ra
+
+READ_CHAR:
+sub $sp, $sp, 4   # we adjust the stack for saving return address and argument
+sw  $ra, 0($sp) 
 #read from file
 li   $v0, 14       # system call for read from file
 move $a0, $s6      # file descriptor 
 la   $a1, buffer   # address of buffer to which to read
-li   $a2, 1     # hardcoded buffer length
+li   $a2, 1        # hardcoded buffer length
 syscall            # read from file
 
 move $s0, $v0	   # the number of characters read from the file
@@ -103,10 +148,8 @@ la   $s1, buffer   #
 
 move $v0, $s1
 
-sub $sp, $sp, -4   # we adjust the stack for saving return address and argument
 lw  $ra, 0($sp) 
-
-
+sub $sp, $sp, -4   # we adjust the stack for saving return address and argument
 
 jr $ra
 
@@ -125,16 +168,10 @@ jr $ra
 
 
 PRINT_INT:
-sub $sp, $sp, 4   # we adjust the stack for saving return address and argument
-sw  $ra, 0($sp)   # stores the return address in stack
-
-
 li $v0, 1
 syscall 
-
-lw  $ra, 0($sp)   # stores the argument in stack
-
 jr $ra
+
 
 CONCAT:
 sub $sp, $sp, 12   # we adjust the stack for saving return address and argument
@@ -193,4 +230,3 @@ jr $ra
 Exit:
 li $v0,10
 syscall             #exits the program
-
