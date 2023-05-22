@@ -92,6 +92,10 @@ LOOP_1:
 			beq $s5, $zero, END_LOOP_3 # if $s5 is 0, meaning that i >= 8, terminate the loop
 
 			jal READ_CHAR
+			
+			
+			move $a0, $v0
+			jal CHAR_TO_NUM
 			move $s3, $v0
 
 			sllv $s3, $s3, $t7 # shift the int that is read to the left by the shift amount 
@@ -101,20 +105,14 @@ LOOP_1:
 			addi $t7, $t7, -4 # shift amount -= 4
 			addi $s4, $s4, 1 # i += 1
 
-			
-		
-
-
 
 		j LOOP_3
 		END_LOOP_3:
 
-		addi $t7, $zero, 1
-		li $t0, 3
-		sll $t7, $t7, $t0
-
-		move $a0, $t7
+		addu $s7, $s7, $zero
+		move $a0, $s7
 		jal PRINT_INT
+
 
 
 		
@@ -216,14 +214,14 @@ sw  $ra, 4($sp)   # stores the return address in stack
 sw  $a0, 0($sp)   # stores the argument in stack
 
 
-la $t0, test_data
+move $t0, $a0 
 lb $t2, 0($t0)
 subi $t1, $t2, 48
 
 #if statement to determine if the char is greater than 9
-subi $t2, $t1, 10
-slt $t3, $t2, $zero
-beq $t3, 1, EXIT_IF_1
+subi $t2, $t1, 10 # $t2 is 0 if integer - 10 is 0 = integer = 10
+slt $t3, $t2, $zero # $t2 < zero => $t3 = 1
+beq $t3, 1, EXIT_IF_1 
 
 subi $t1, $t1, 39
 
