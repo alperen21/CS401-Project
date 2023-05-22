@@ -6,7 +6,7 @@ T3: .space 4
 fin: .asciiz "/Users/alperenyildiz/CS401-Project/tables.dat"      # put the fullpath name of the file AES.dat here
 buffer: .space 5000                    # temporary buffer to read from file
 
-test_data: .asciiz "5"
+test_data: .asciiz "f"
 temp: .space 5000
 
 char_zero: .ascii "0"
@@ -68,7 +68,6 @@ li $v0, 1
 syscall 
 
 lw  $ra, 0($sp)   # stores the argument in stack
-addi $sp, $sp, 4
 
 jr $ra
 
@@ -82,6 +81,17 @@ sw  $a0, 0($sp)   # stores the argument in stack
 la $t0, test_data
 lb $t2, 0($t0)
 subi $t1, $t2, 48
+
+#if statement to determine if the char is greater than 9
+subi $t2, $t1, 10
+slt $t3, $t2, $zero
+beq $t3, 1, EXIT_IF_1
+
+subi $t1, $t1, 39
+
+
+EXIT_IF_1:
+
 
 move $a0, $t1
 jal PRINT_INT
