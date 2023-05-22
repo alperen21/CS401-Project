@@ -9,11 +9,81 @@ buffer: .space 5000                    # temporary buffer to read from file
 test_data: .asciiz "f"
 temp: .space 5000
 
-char_zero: .ascii "0"
-char_a: .ascii "a"
+char_x: .ascii "x"
 
 .text
+
+
+la $a0, test_data
+
+addiu $t1, $a0, 5    # Get the address of the 6th character (index 5)
+lb $t2, 0($t1)       # Load the ASCII value into $t2
+    
+addi $s0, $zero, 28 #ENVIRONMENT VARIABLE DO NOT USE S0 REGISTER
+
+
+addi $a0, $zero, 1
+addi $a1, $zero, 1
+
+
+
+jal READ_FILE
+
+j Exit
+
+READ_FILE:
+sub $sp, $sp, 4   # we adjust the stack for saving return address and argument
+sw  $ra, 0($sp)   # stores the return address in stack
+
+la $t0, char_x
+lb $t1, 0($t0)
+
+move $t2, $zero #read boolean value
+
+jal READ_CHAR
+jal READ_CHAR
+
+
+
+move $t3, $zero
+LOOP_1:
+	slti $t4, $t3, 3069
+	beq $t4, $zero, EXIT_LOOP_1
+
+
+	move $t4, $zero
+	LOOP_2:
+		slti $t5, $t4, 8
+		beq $t5, $zero, EXIT_LOOP_2
+
+		jal READ_CHAR
+		move $a0, $v0
+		jal PRINT
+
+	EXIT_LOOP_2:
+
+	move $t4, $zero
+	LOOP_3:
+		slti $t5, $t4, 4
+		beq $t5, $zero, EXIT_LOOP_3
+
+		#do nothing
+		jal READ_CHAR
+
+	EXIT_LOOP_3:
+
+	
+
+	addi $t3, $t3, 1
+EXIT_LOOP_1:
+jr $ra
+
+
+READ_CHAR:
 #open a file for writing
+sub $sp, $sp, 4   # we adjust the stack for saving return address and argument
+sw  $ra, 0($sp) 
+
 li   $v0, 13       # system call for open file
 la   $a0, fin      # file name
 li   $a1, 0        # Open for reading
@@ -31,26 +101,14 @@ syscall            # read from file
 move $s0, $v0	   # the number of characters read from the file
 la   $s1, buffer   # 
 
-la $a0, test_data
+move $v0, $s1
 
-addiu $t1, $a0, 5    # Get the address of the 6th character (index 5)
-lb $t2, 0($t1)       # Load the ASCII value into $t2
-    
-addi $s0, $zero, 28 #ENVIRONMENT VARIABLE DO NOT USE S0 REGISTER
-
-
-addi $a0, $zero, 1
-addi $a1, $zero, 1
-jal CONCAT
-
-move $a0, $v0
-jal PRINT_INT
-
-
-j Exit
+sub $sp, $sp, -4   # we adjust the stack for saving return address and argument
+lw  $ra, 0($sp) 
 
 
 
+jr $ra
 
 PRINT:
 sub $sp, $sp, 4   # we adjust the stack for saving return address and argument
