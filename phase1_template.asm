@@ -36,8 +36,15 @@ la $a0, test_data
 addiu $t1, $a0, 5    # Get the address of the 6th character (index 5)
 lb $t2, 0($t1)       # Load the ASCII value into $t2
     
+addi $s0, $zero, 28 #ENVIRONMENT VARIABLE DO NOT USE S0 REGISTER
 
-jal CHAR_TO_NUM
+
+addi $a0, $zero, 1
+addi $a1, $zero, 1
+jal CONCAT
+
+move $a0, $v0
+jal PRINT_INT
 
 
 j Exit
@@ -71,6 +78,33 @@ lw  $ra, 0($sp)   # stores the argument in stack
 
 jr $ra
 
+CONCAT:
+sub $sp, $sp, 12   # we adjust the stack for saving return address and argument
+sw  $ra, 8($sp)   # stores the return address in stack
+sw  $a0, 4($sp)   # stores the argument in stack
+sw  $a1, 0($sp)   # stores the argument in stack
+
+move $t0, $zero # integer to hold the concat result
+
+sllv $a0, $a0, $s0
+subi $s0, $s0, 4
+
+sllv $a1, $a1, $s0
+subi $s0, $s0, 4
+
+or $t0, $t0, $a0
+or $t0, $t0, $a1
+
+move $v0, $t0
+
+lw  $ra, 8($sp)   # stores the return address in stack
+lw  $a0, 4($sp)   # stores the argument in stack
+lw  $a1, 0($sp)   # stores the argument in stack
+sub $sp, $sp, -12   # we adjust the stack for saving return address and argument
+
+jr $ra
+
+
 
 CHAR_TO_NUM:
 sub $sp, $sp, 8   # we adjust the stack for saving return address and argument
@@ -92,10 +126,9 @@ subi $t1, $t1, 39
 
 EXIT_IF_1:
 
+move $v0, $t1
 
-move $a0, $t1
-jal PRINT_INT
-
+sub $sp, $sp, -8  
 jr $ra
 
 
