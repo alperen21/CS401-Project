@@ -14,6 +14,40 @@ char_x: .ascii "x"
 .text
 
 
+li $a0, 1024      # Allocate 32 bytes
+li $v0, 9       # System call number for sbrk
+syscall
+move $t0, $v0   # Move the base address to $t0
+la $t1, T0
+sw $t0, ($t1)
+
+
+li $a0, 1024      # Allocate 32 bytes
+li $v0, 9       # System call number for sbrk
+syscall
+move $t0, $v0   # Move the base address to $t0
+la $t1, T1 #load address of T1
+sw $t0, T1 #store the address of allocated space in T1
+
+
+
+li $a0, 1024      # Allocate 32 bytes
+li $v0, 9       # System call number for sbrk
+syscall
+move $t0, $v0   # Move the base address to $t0
+la $t1, T2 #load address of T2
+sw $t0, T2 #store the address of allocated space in T1
+
+
+
+li $a0, 1024      # Allocate 32 bytes
+li $v0, 9       # System call number for sbrk
+syscall
+move $t0, $v0   # Move the base address to $t0
+la $t1, T3 #load address of T3
+sw $t0, T3 #store the address of allocated space in T1
+
+
 la $a0, test_data
 
 addiu $t1, $a0, 5    # Get the address of the 6th character (index 5)
@@ -48,9 +82,20 @@ move $t4, $zero
 
 ### while (int i < 4)###
 jal OPEN_FILE
+
+
+
+
+
+
+
+
+
 LOOP_1:
 	slti $t5, $t4, 4
 	beq $t5, $zero, EXIT_LOOP_1
+
+	move $a3, $zero
 ### while (int i < 4)###
 
 
@@ -87,6 +132,7 @@ LOOP_1:
 		jal READ_CHAR
 
 		## 8 kere say ###
+		
 		LOOP_3:
 			slti $s5, $s4, 8  # $s5 = 1 if i < 8
 			beq $s5, $zero, END_LOOP_3 # if $s5 is 0, meaning that i >= 8, terminate the loop
@@ -102,6 +148,10 @@ LOOP_1:
 			or $s7, $s7, $s3 # logical or will concatenate the integer values and will turn the hexa number to binary
 
 
+
+
+
+
 			addi $t7, $t7, -4 # shift amount -= 4
 			addi $s4, $s4, 1 # i += 1
 
@@ -109,11 +159,36 @@ LOOP_1:
 		j LOOP_3
 		END_LOOP_3:
 
-		addu $s7, $s7, $zero
-		move $a0, $s7
-		jal PRINT_INT
+	
+		
 
+		beq $t0, 0, T0_LABEL
+		beq $t0, 1, T1_LABEL
+		beq $t0, 2, T2_LABEL
+		beq $t0, 3, T3_LABEL
 
+		T0_LABEL:
+		la $t8, T0
+		add $t8, $t8, $a3
+		sw $s7, 0($t8)
+		
+		T1_LABEL:
+		la $t8, T1
+		add $t8, $t8, $a3
+		sw $s7, 0($t8)
+
+		T2_LABEL:
+		la $t8, T2
+		add $t8, $t8, $a3
+		sw $s7,0($t8)
+
+		T3_LABEL:
+		la $t8, T3
+		add $t8, $t8, $a3
+		sw $s7, 0($t8)
+
+		
+		addi $a3, $a3, 4
 
 		
 
@@ -186,7 +261,7 @@ jr $ra
 
 
 PRINT_INT:
-li $v0, 1
+li $v0, 34
 syscall 
 jr $ra
 
