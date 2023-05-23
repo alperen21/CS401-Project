@@ -152,7 +152,7 @@ LOOP_1:
 
 
 
-			addi $t7, $t7, -4 # shift amount -= 4
+			addi $t7, $t7, -4 # shift amount -= 4
 			addi $s4, $s4, 1 # i += 1
 
 
@@ -174,6 +174,7 @@ LOOP_1:
 		sll $v1, $a3, 2 
 		add $t9, $t9, $v1
 		sw $s7, 0($t9)
+		addi $t8, $t8, 4
 		j LOOP_2
 		
 		T1_LABEL:
@@ -183,6 +184,7 @@ LOOP_1:
 		sll $v1, $a3, 2 
 		add $t9, $t9, $v1
 		sw $s7, 0($t9)
+		addi $t8, $t8, 4
 		j LOOP_2
 
 		T2_LABEL:
@@ -192,6 +194,7 @@ LOOP_1:
 		sll $v1, $a3, 2 
 		add $t9, $t9, $v1
 		sw $s7, 0($t9)
+		addi $t8, $t8, 4
 		j LOOP_2
 
 		T3_LABEL:
@@ -201,11 +204,13 @@ LOOP_1:
 		sll $v1, $a3, 2 
 		add $t9, $t9, $v1
 		sw $s7, 0($t9)
+		
+		addi $t8, $t8, 4
 		j LOOP_2
 
 		
 		addi $a3, $a3, 4
-		addi $t8, $t8, 4 #to increment the value that holds the number of the word
+		 #to increment the value that holds the number of the word
 
 		
 
@@ -306,8 +311,8 @@ sw  $ra, 4($sp)   # stores the return address in stack
 sw  $a0, 0($sp)   # stores the argument in stack
 
 
-move $t0, $a0 
-lb $t2, 0($t0)
+move $t9, $a0 
+lb $t2, 0($t9)
 subi $t1, $t2, 48
 
 #if statement to determine if the char is greater than 9
