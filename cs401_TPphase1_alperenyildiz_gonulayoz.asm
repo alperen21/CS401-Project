@@ -26,7 +26,7 @@ li $v0, 9       # System call number for sbrk
 syscall
 move $t0, $v0   # Move the base address to $t0
 la $t1, T1 #load address of T1
-sw $t0, T1 #store the address of allocated space in T1
+sw $t0, ($t1) #store the address of allocated space in T1
 
 
 
@@ -35,7 +35,7 @@ li $v0, 9       # System call number for sbrk
 syscall
 move $t0, $v0   # Move the base address to $t0
 la $t1, T2 #load address of T2
-sw $t0, T2 #store the address of allocated space in T1
+sw $t0, ($t1) #store the address of allocated space in T1
 
 
 
@@ -44,42 +44,7 @@ li $v0, 9       # System call number for sbrk
 syscall
 move $t0, $v0   # Move the base address to $t0
 la $t1, T3 #load address of T3
-sw $t0, T3 #store the address of allocated space in T1
-
-
-
-li $a0, 1024      # Allocate 32 bytes
-li $v0, 9       # System call number for sbrk
-syscall
-move $t0, $v0   # Move the base address to $t0
-la $t1, T0
-sw $t0, ($t1)
-
-
-li $a0, 1024      # Allocate 32 bytes
-li $v0, 9       # System call number for sbrk
-syscall
-move $t0, $v0   # Move the base address to $t0
-la $t1, T1 #load address of T1
-sw $t0, T1 #store the address of allocated space in T1
-
-
-
-li $a0, 1024      # Allocate 32 bytes
-li $v0, 9       # System call number for sbrk
-syscall
-move $t0, $v0   # Move the base address to $t0
-la $t1, T2 #load address of T2
-sw $t0, T2 #store the address of allocated space in T1
-
-
-
-li $a0, 1024      # Allocate 32 bytes
-li $v0, 9       # System call number for sbrk
-syscall
-move $t0, $v0   # Move the base address to $t0
-la $t1, T3 #load address of T3
-sw $t0, T3 #store the address of allocated space in T1
+sw $t0, ($t1) #store the address of allocated space in T1
 
 
 la $a0, test_data
@@ -137,6 +102,7 @@ LOOP_1:
 	# move $a0, $v0
 	# jal PRINT
 	move $t0, $zero
+	move $t8, $zero #to keep track of at which word we are at
 
 	### while (j < 3070) ###
 	LOOP_2:
@@ -180,7 +146,7 @@ LOOP_1:
 
 			sllv $s3, $s3, $t7 # shift the int that is read to the left by the shift amount 
 			or $s7, $s7, $s3 # logical or will concatenate the integer values and will turn the hexa number to binary
-
+			
 
 
 
@@ -196,37 +162,50 @@ LOOP_1:
 	
 		
 
-		beq $t0, 0, T0_LABEL
-		beq $t0, 1, T1_LABEL
-		beq $t0, 2, T2_LABEL
-		beq $t0, 3, T3_LABEL
+		beq $t4, 0, T0_LABEL
+		beq $t4, 1, T1_LABEL
+		beq $t4, 2, T2_LABEL
+		beq $t4, 3, T3_LABEL
 
 		T0_LABEL:
-		la $t8, T0
-		lw $t8, 0($t8)
-		add $t8, $t8, $a3
-		sw $s7, 0($t8)
+		la $t9, T0
+		lw $t9, 0($t9)
+		add $t9, $t9, $t8
+		sll $v1, $a3, 2 
+		add $t9, $t9, $v1
+		sw $s7, 0($t9)
+		j LOOP_2
 		
 		T1_LABEL:
-		la $t8, T1
-		lw $t8, 0($t8)
-		add $t8, $t8, $a3
-		sw $s7, 0($t8)
+		la $t9, T1
+		lw $t9, 0($t9)
+		add $t9, $t9, $t8
+		sll $v1, $a3, 2 
+		add $t9, $t9, $v1
+		sw $s7, 0($t9)
+		j LOOP_2
 
 		T2_LABEL:
-		la $t8, T2
-		lw $t8, 0($t8)
-		add $t8, $t8, $a3
-		sw $s7,0($t8)
+		la $t9, T2
+		lw $t9, 0($t9)
+		add $t9, $t9, $t8
+		sll $v1, $a3, 2 
+		add $t9, $t9, $v1
+		sw $s7, 0($t9)
+		j LOOP_2
 
 		T3_LABEL:
-		la $t8, T3
-		lw $t8, 0($t8)
-		add $t8, $t8, $a3
-		sw $s7, 0($t8)
+		la $t9, T3
+		lw $t9, 0($t9)
+		add $t9, $t9, $t8
+		sll $v1, $a3, 2 
+		add $t9, $t9, $v1
+		sw $s7, 0($t9)
+		j LOOP_2
 
 		
 		addi $a3, $a3, 4
+		addi $t8, $t8, 4 #to increment the value that holds the number of the word
 
 		
 
