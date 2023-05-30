@@ -9,6 +9,9 @@ buffer: .space 20000                    # temporary buffer to read from file
 s:    .word 0xd82c07cd, 0xc2094cbd, 0x6baa9441, 0x42485e3f
 rkey: .word 0x82e2e670, 0x67a9c37d, 0xc8a7063b, 0x4da5e71f
 
+rcon: .word 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
+key: .word 0x6920e299, 0xa5202a6d, 0x656e6368, 0x69746f2a
+
 t: .space 16
 
 test_data: .asciiz "f"
@@ -57,7 +60,7 @@ addi $a1, $zero, 1
 jal READ_FILE
 jal ROUND_OPERATION_ALL
 
-
+jal KEY_SCHEDULE
 
 
 
@@ -318,15 +321,12 @@ ROUND_OPERATION:
 	
 	xor $s4, $s4, $t2			# result = rkey[i] ^ T3[s[i] >> 24] ^ T1[(s[i+1] >> 16) & 0xff] ^ T2[s[i+2] >> 8 & 0xff] ^ T0[s[i+3] & 0xff]
 	
-	
 	# END OF THE PROCEDURE #
 	lw  $ra, 8($sp)				# for return address
 	lw $a0, 4($sp)				# for index
 	lw $a1, 0($sp)	 			# for rkey
 	sub $sp, $sp, -12  
-	
 	addi $v0, $s4, 0
-	
 	jr $ra
 	
 INCREMENT_INDEX:
@@ -334,7 +334,6 @@ INCREMENT_INDEX:
 	sub $sp, $sp, 8
 	sw $ra, 4($sp)				# for return address
 	sw $a0, 0($sp)
-	
 	addi $a0, $a0, 1			# incrementing the index by 1
 	
 	slti $t0, $a0, 4			# checking if the index is greater than 3
@@ -344,7 +343,6 @@ INCREMENT_INDEX:
 	
 EXIT_INCREMENT:
 
-	
 	addi $v0, $a0, 0
 	lw  $ra, 4($sp)				# for return address
 	lw $a0, 0($sp)				# for index 
@@ -355,12 +353,10 @@ ROUND_OPERATION_ALL:
 
 	sub $sp, $sp, 4
 	sw $ra, 0($sp)
-	
-
-
 	move $t4, $zero
 	
-	ROUND_OPERATION_ALL_LOOP:		# initialize index as 0
+ROUND_OPERATION_ALL_LOOP:			# initialize index as 0
+
 	slti $t5, $t4, 4			# check if index is smaller than 4
 	beq $t5, 0, EXIT_LOOP			# if index is not smaller than 4, exit loop
 	
@@ -383,8 +379,37 @@ ROUND_OPERATION_ALL:
 	jr $ra
 
 
+KEY_SCHEDULE:
+	
+	la $s5, key				# $s5 = &key
+	la $s6, rkey 				# $s6 = &rkey 
+	move $t0, $zero				# index i = 0
+	
+FOR_LOOP_KEY:
+	
+	slti $t1, $t0, 4			# checking if index is smaller than 4
+	beq $t1, 0, EXIT_FOR_LOOP_KEY
+	
+	sll $t2, $t0, 2				# 4i
+	add $t2, $t2, $s5			# t2 = &key[i]
+	lw $t2, 0($t2)				# t2 = key[i]
+	
+	
+	sll $t3, $t0, 2				# 4i
+	add $t3, $s6, $t3			# t3 = &rkey[i]
+	
+	sw $t2, 0($t3)				# rkey[i] = key[i]
+	
+	
+	
+	
+	
+	addi $t0, $t0, 1			# i = i + 1
+	j FOR_LOOP_KEY
+	
+EXIT_FOR_LOOP_KEY:
 
-
+ 	jr $ra	
 
 Exit:
 	li $v0,10
