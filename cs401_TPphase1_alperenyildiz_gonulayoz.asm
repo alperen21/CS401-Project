@@ -235,9 +235,13 @@ ROUND_OPERATION:
 	#move $s1, $zero  			# j = 0 and is kept in $s1
 		
 	la $s0, T0				# $s0 keeps the address of TO
+	lw $s0, 0($s0)
 	la $s1, T1				# $s1 keeps the address of T1
+	lw $s1, 0($s1)
 	la $s2, T2				# $s2 keeps the address of T2
+	lw $s2, 0($s2)
 	la $s3, T3				# $s3 keeps the address of T3
+	lw $s3, 0($s3)
 	
 	move $s4, $zero				# $s4 is for the result 
 	
@@ -302,14 +306,6 @@ ROUND_OPERATION:
 	lw $t2, 0($t2)				# $t2 = T0[s[i+3] & 0xff]
 	
 	xor $s4, $s4, $t2			# result = rkey[i] ^ T3[s[i] >> 24] ^ T1[(s[i+1] >> 16) & 0xff] ^ T2[s[i+2] >> 8 & 0xff] ^ T0[s[i+3] & 0xff]
-	
-	
-
-	
-	
-	
-	
-	
 	
 	
 	
