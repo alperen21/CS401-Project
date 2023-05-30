@@ -47,23 +47,26 @@ sw $t0, ($t1) 				#store the address of allocated space in T1
 
 la $a0, test_data
 
-addiu $t1, $a0, 5    # Get the address of the 6th character (index 5)
-lb $t2, 0($t1)       # Load the ASCII value into $t2
+addiu $t1, $a0, 5    			# Get the address of the 6th character (index 5)
+lb $t2, 0($t1)       			# Load the ASCII value into $t2
 addi $a0, $zero, 1
 addi $a1, $zero, 1
 
 jal READ_FILE
-j ROUND_OPERATION
+
+move $a0, $zero
+la $a1, rkey
+jal ROUND_OPERATION
 j Exit
 
 READ_FILE:
-sub $sp, $sp, 4   # we adjust the stack for saving return address and argument
-sw  $ra, 0($sp)   # stores the return address in stack
+sub $sp, $sp, 4   			# we adjust the stack for saving return address and argument
+sw  $ra, 0($sp)   			# stores the return address in stack
 
 la $t0, char_x
 lb $t1, 0($t0)
 
-move $t2, $zero #read boolean value
+move $t2, $zero 			#read boolean value
 move $t3, $zero
 move $t4, $zero
 
@@ -77,7 +80,7 @@ LOOP_1:
 
 	move $a3, $zero
 	move $t0, $zero
-	move $t8, $zero #to keep track of at which word we are at
+	move $t8, $zero 		#to keep track of at which word we are at
 
 LOOP_2:
 	addi $t0, $t0, 1
@@ -87,29 +90,28 @@ LOOP_2:
 	move $s3, $v0
 	lb $s3, ($s3)
 
-	subi $s7, $s3, 48	# the ascii value of x: 48
+	subi $s7, $s3, 48		# the ascii value of x: 48
 	bne $s7, $zero, LOOP_2
-	move $s4, $zero # index for LOOP3, i = 0
-	move $s7, $zero # concat integer, currently 0
-	addi $t7, $zero, 28 # sll amount, 28 in the first iteration, 24 in the second,...	
+	move $s4, $zero 		# index for LOOP3, i = 0
+	move $s7, $zero 		# concat integer, currently 0
+	addi $t7, $zero, 28 		# sll amount, 28 in the first iteration, 24 in the second,...	
 	
 	jal READ_CHAR
 		
 LOOP_3:
-	slti $s5, $s4, 8  # $s5 = 1 if i < 8
-	beq $s5, $zero, END_LOOP_3 # if $s5 is 0, meaning that i >= 8, terminate the loop
+	slti $s5, $s4, 8  		# $s5 = 1 if i < 8
+	beq $s5, $zero, END_LOOP_3 	# if $s5 is 0, meaning that i >= 8, terminate the loop
 	jal READ_CHAR
 			
 	move $a0, $v0
 	jal CHAR_TO_NUM
 	move $s3, $v0
 
-	sllv $s3, $s3, $t7 # shift the int that is read to the left by the shift amount 
-	or $s7, $s7, $s3 # logical or will concatenate the integer values and will turn the hexa number to binary
+	sllv $s3, $s3, $t7 		# shift the int that is read to the left by the shift amount 
+	or $s7, $s7, $s3 		# logical or will concatenate the integer values and will turn the hexa number to binary
 
-	addi $t7, $t7, -4 # shift amount -= 4
-	addi $s4, $s4, 1 # i += 1
-
+	addi $t7, $t7, -4 		# shift amount -= 4
+	addi $s4, $s4, 1 		# i += 1
 	j LOOP_3
 		
 END_LOOP_3:
@@ -239,9 +241,16 @@ ROUND_OPERATION:
 	
 	move $s4, $zero				# $s4 is for the result 
 	
+	sll $t2, $a0, 2				# t2 = 4i
+	add $t2, $t2, $a1			# t2  = &rkey[i]
+	lw $t2, 0($t2)				# t2 = rkey[i]
+	xor $s4, $s4, $t2			# s4 = rkey[i]
+	
 	la $t0, s				# the address of s is kept in $t0
+	move $s5, $t0				# to save the address of s
+	
 	sll $t1, $a0, 2				# i = 4i and is kept in $t1
-	add $t2, $a0, $t1			# $t2 = &s[i]
+	add $t2, $t0, $t1			# $t2 = &s[i]
 	lw $t2, 0($t2)				# $t2 = s[i]
 	
 	srl $t2, $t2, 24			# s[i] >> 24
@@ -249,13 +258,69 @@ ROUND_OPERATION:
 	add $t3, $s3, $t2			# $t3 = &T3[s[i] >> 24]
 	lw $t3, 0($t3) 				# $t3 = T3[s[i] >> 24]
 	
-	xor $s4, $s4, $t3			# result = T3[s[i] >> 24]
+	xor $s4, $s4, $t3			# result = rkey[i] ^ T3[s[i] >> 24]
+	
+	jal INCREMENT_INDEX			
+	move $v0, $a0				# $a0 += 1
+	
+						# second phase
+	sll $t1, $a0, 2				# 4(i+1)
+	add $t2, $s5, $t1			# t2 = &s[i+1]
+	lw $t2, 0($t2)				# t2 = s[i+1]	
+	
+	srl $t2, $t2, 16			# t2 = s[i+1] >> 16
+	and $t2, $t2, 0xff			# t2 = (s[i+1] >> 16) & 0xff
+	sll $t2, $t2, 2				# to calculate address
+	add $t2, $t2, $s1			# t2 = &T1[(s[i+1] >> 16) & 0xff]
+	lw $t2, 0($t2)				# t2 = T1[(s[i+1] >> 16) & 0xff]
+	
+	xor $s4, $s4, $t2			# result = rkey[i] ^ T3[s[i] >> 24] ^ T1[(s[i+1] >> 16) & 0xff]
+	
+	jal INCREMENT_INDEX
+	move $v0, $a0
+	
+	sll $t1, $a0, 2				# 4(i+2)
+	add $t2, $s5, $t1			# t2 = &s[i+2]
+	lw $t2, 0($t2)				# t2 = s[i+2]
+	
+	srl $t2, $t2, 8				# $t2 = s[i+2] >> 8
+	and $t2, $t2, 0xff			# $t2 = s[i+2] >> 8 & 0xff
+	sll $t2, $t2, 2				# to calculate address
+	add $t2, $t2, $s2     			# $t2 = &T2[s[i+2] >> 8 & 0xff]
+	lw $t2, 0($t2) 				# $t2 = T2[s[i+2] >> 8 & 0xff]
+	xor $s4, $s4, $t2			# result = rkey[i] ^ T3[s[i] >> 24] ^ T1[(s[i+1] >> 16) & 0xff] ^ T2[s[i+2] >> 8 & 0xff]
+	
+	jal INCREMENT_INDEX
+	move $v0, $a0				
+	
+	sll $t1, $a0, 2				# 4(i+3)
+	add $t2, $s5, $t1			# t2 = &s[i+3]
+	lw $t2, 0($t2)				# t2 = s[i+3]
+	and $t2, $t2, 0xff			# $t2 = s[i+3] & 0xff
+	sll $t2, $t2, 2
+	add $t2, $t2, $s0			# $t2 = &T0[s[i+3] & 0xff]
+	lw $t2, 0($t2)				# $t2 = T0[s[i+3] & 0xff]
+	
+	xor $s4, $s4, $t2			# result = rkey[i] ^ T3[s[i] >> 24] ^ T1[(s[i+1] >> 16) & 0xff] ^ T2[s[i+2] >> 8 & 0xff] ^ T0[s[i+3] & 0xff]
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
 	
 	# END OF THE PROCEDURE #
 	lw  $ra, 8($sp)				# for return address
 	lw $a0, 4($sp)				# for index
 	lw $a1, 0($sp)	 			# for rkey
 	sub $sp, $sp, -12  
+	
+	addi $v0, $a0, 0
+	
 	jr $ra
 	
 INCREMENT_INDEX:
