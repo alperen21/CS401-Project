@@ -32,14 +32,14 @@ li $a0, 1024      			# Allocate 32 bytes
 li $v0, 9       			# System call number for sbrk
 syscall
 move $t0, $v0   			# Move the base address to $t0
-la $t1, T1 				#load address of T1
+la $t1, T1 					#load address of T1
 sw $t0, ($t1) 				#store the address of allocated space in T1
 
 li $a0, 1024      			# Allocate 32 bytes
 li $v0, 9       			# System call number for sbrk
 syscall
 move $t0, $v0   			# Move the base address to $t0
-la $t1, T2 				#load address of T2
+la $t1, T2 					#load address of T2
 sw $t0, ($t1) 				#store the address of allocated space in T1
 
 li $a0, 1024      			# Allocate 32 bytes
@@ -402,23 +402,68 @@ FOR_LOOP_KEY:
 	
 	addi $t4, $zero, 24
 	
-	move $s0, $zero 			#s0 = a
-	move $s1, $zero 			#s1 = b
-	move $s2, $zero 			#s2 = c
-	move $s3, $zero 			#s3 = d
+	move $s0, $zero 			# s0 = a
+	move $s1, $zero 			# s1 = b
+	move $s2, $zero 			# s2 = c
+	move $s3, $zero 			# s3 = d
 	
 	jal UPDATE_ROUND_KEY
-	move $s0, $v0
+	move $s0, $v0				# a = (rkey[2] >> 24) & 0xFF
 	
 	jal UPDATE_ROUND_KEY
-	move $s1, $v0
+	move $s1, $v0				# b = (rkey[2] >> 16) & 0xFF
 	
 	jal UPDATE_ROUND_KEY
-	move $s2, $v0
+	move $s2, $v0				# c = (rkey[2] >> 8) & 0xFF
 
 	jal UPDATE_ROUND_KEY
-	move $s3, $v0
+	move $s3, $v0				# d = (rkey[2] >> 0) & 0xFF
+
+	la $t4, T2					
+	lw $t4, 0($t4)				# t4 = &T2
+
+	add $s1, $s1, $t4			# s1 = &T2[a]
+	lw $s1, 0($s1)				# s1 = T2[a]
+	and $s1, $s1, 0xFF			# s1 = T2[a] & 0xFF
+
+	add $s2, $s2, $t4			# s2 = &T2[b]
+	lw $s2, 0($s2)				# s2 = T2[b]
+	and $s2, $s2, 0xFF			# s2 = T2[b] & 0xFF
+
+	add $s3, $s3, $t4			# s3 = &T2[c]
+	lw $s3, 0($s3)				# s3 = T2[c]
+	and $s3, $s3, 0xFF			# s3 = T2[c] & 0xFF
+
+	add $s4, $s4, $t4			# s4 = &T2[d]
+	lw $s4, 0($s4)				# s4 = T2[d]
+	and $s4, $s4, 0xFF			# s4 = T2[d] & 0xFF
+
+	move $s5, rcon				# s5 = &rcon
+	add $s5, $t0, $s5			# s5 = &rcon[i]
+	lw $s5, 0($s5)				# s5 = rcon[i]
+
+	xor $s2, $s2, $s5			# s2 = (T2[b]&0xFF)^ rcon[i]
+
+	# s1 = h 
+	# s2 = e
+	# s3 = f
+	# s4 = g
+
+	sll $s2, $s2, 24			# e = e << 24
+	sll $s3, $s3, 16			# f = f << 16
+	sll $s4, $s4, 8				# g = g << 8
 	
+	xor $s5, $s2, $s3			# s5 = e ^ f
+	xor $s5, $s5, $s4			# s5 = tmp = e ^ f ^ g
+
+	
+
+
+
+	
+
+
+
 	addi $t0, $t0, 1			# i = i + 1
 	j FOR_LOOP_KEY
 	
