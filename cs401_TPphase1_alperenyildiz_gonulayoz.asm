@@ -400,16 +400,51 @@ FOR_LOOP_KEY:
 	
 	sw $t2, 0($t3)				# rkey[i] = key[i]
 	
+	addi $t4, $zero, 24
 	
+	move $s0, $zero 			#s0 = a
+	move $s1, $zero 			#s1 = b
+	move $s2, $zero 			#s2 = c
+	move $s3, $zero 			#s3 = d
 	
+	jal UPDATE_ROUND_KEY
+	move $s0, $v0
 	
+	jal UPDATE_ROUND_KEY
+	move $s1, $v0
+	
+	jal UPDATE_ROUND_KEY
+	move $s2, $v0
+
+	jal UPDATE_ROUND_KEY
+	move $s3, $v0
 	
 	addi $t0, $t0, 1			# i = i + 1
 	j FOR_LOOP_KEY
 	
 EXIT_FOR_LOOP_KEY:
-
  	jr $ra	
+
+UPDATE_ROUND_KEY:
+	sub $sp, $sp, 4
+	sw $ra, 0($sp)
+	
+	addi $t6, $s6, 8			# t6 = &rkey[2]
+	lw $t6, 0($t6)				# t6 = rkey[2]
+	srlv $t6, $t6, $t4			# t6 = rkey[2] >> value
+	and $t6, $t6, 0xFF			# t6 = rkey[2] 
+	
+
+	move $v0, $t6
+	
+	subi $t4, $t4, 8
+	
+	
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	jr $ra
+	
 
 Exit:
 	li $v0,10
