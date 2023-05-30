@@ -9,6 +9,8 @@ buffer: .space 20000                    # temporary buffer to read from file
 s:    .word 0xd82c07cd, 0xc2094cbd, 0x6baa9441, 0x42485e3f
 rkey: .word 0x82e2e670, 0x67a9c37d, 0xc8a7063b, 0x4da5e71f
 
+t: .space 16
+
 test_data: .asciiz "f"
 temp: .space 5000
 
@@ -53,10 +55,19 @@ addi $a0, $zero, 1
 addi $a1, $zero, 1
 
 jal READ_FILE
+jal ROUND_OPERATION_ALL
 
-move $a0, $zero
-la $a1, rkey
-jal ROUND_OPERATION
+
+
+
+
+#move $a0, $zero
+#la $a1, rkey
+#jal ROUND_OPERATION
+
+
+
+
 j Exit
 
 READ_FILE:
@@ -265,7 +276,7 @@ ROUND_OPERATION:
 	xor $s4, $s4, $t3			# result = rkey[i] ^ T3[s[i] >> 24]
 	
 	jal INCREMENT_INDEX			
-	move $v0, $a0				# $a0 += 1
+	move $a0, $v0				# $a0 += 1
 	
 						# second phase
 	sll $t1, $a0, 2				# 4(i+1)
@@ -281,7 +292,7 @@ ROUND_OPERATION:
 	xor $s4, $s4, $t2			# result = rkey[i] ^ T3[s[i] >> 24] ^ T1[(s[i+1] >> 16) & 0xff]
 	
 	jal INCREMENT_INDEX
-	move $v0, $a0
+	move $a0, $v0
 	
 	sll $t1, $a0, 2				# 4(i+2)
 	add $t2, $s5, $t1			# t2 = &s[i+2]
@@ -295,7 +306,7 @@ ROUND_OPERATION:
 	xor $s4, $s4, $t2			# result = rkey[i] ^ T3[s[i] >> 24] ^ T1[(s[i+1] >> 16) & 0xff] ^ T2[s[i+2] >> 8 & 0xff]
 	
 	jal INCREMENT_INDEX
-	move $v0, $a0				
+	move $a0, $v0			
 	
 	sll $t1, $a0, 2				# 4(i+3)
 	add $t2, $s5, $t1			# t2 = &s[i+3]
@@ -308,14 +319,13 @@ ROUND_OPERATION:
 	xor $s4, $s4, $t2			# result = rkey[i] ^ T3[s[i] >> 24] ^ T1[(s[i+1] >> 16) & 0xff] ^ T2[s[i+2] >> 8 & 0xff] ^ T0[s[i+3] & 0xff]
 	
 	
-	
 	# END OF THE PROCEDURE #
 	lw  $ra, 8($sp)				# for return address
 	lw $a0, 4($sp)				# for index
 	lw $a1, 0($sp)	 			# for rkey
 	sub $sp, $sp, -12  
 	
-	addi $v0, $a0, 0
+	addi $v0, $s4, 0
 	
 	jr $ra
 	
@@ -333,12 +343,48 @@ INCREMENT_INDEX:
 	subi $a0, $a0, 4
 	
 EXIT_INCREMENT:
+
 	
 	addi $v0, $a0, 0
 	lw  $ra, 4($sp)				# for return address
 	lw $a0, 0($sp)				# for index 
 	sub $sp, $sp, -8  
 	jr $ra
+
+ROUND_OPERATION_ALL:
+
+	sub $sp, $sp, 4
+	sw $ra, 0($sp)
+	
+
+
+	move $t4, $zero
+	
+	ROUND_OPERATION_ALL_LOOP:		# initialize index as 0
+	slti $t5, $t4, 4			# check if index is smaller than 4
+	beq $t5, 0, EXIT_LOOP			# if index is not smaller than 4, exit loop
+	
+	
+	la $a1, rkey
+	move $a0, $t4
+	jal ROUND_OPERATION
+	
+	la $t5, t				# $t5 = &t
+	sll $t6, $t4,2				# t6 = 4i
+	add $t6, $t6, $t5			# t6 = &t[i]
+	sw $v0, 0($t6)				# t[i] = v0 which is the result of ROUND_OPERATION
+	
+	addi $t4, $t4, 1
+	j ROUND_OPERATION_ALL_LOOP
+	EXIT_LOOP:
+	
+	lw  $ra, 0($sp)				# for return address
+	sub $sp, $sp, -4
+	jr $ra
+
+
+
+
 
 Exit:
 	li $v0,10
