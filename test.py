@@ -12,21 +12,39 @@ def foo(i):
 
     a = (rkey[2] >> 24) & 0xFF
     b = (rkey[2] >> 16) & 0xFF
+    
     c = (rkey[2] >> 8) & 0xFF
     d = rkey[2] & 0xFF
+
     e = (T2[b]&0xFF)^ rcon[i]
+    
+    
+
     f = T2[c]&0xFF
+
     g = T2[d]&0xFF
     h = T2[a]&0xFF
     tmp = (e << 24) ^ (f << 16) ^ (g << 8) ^ h
+
+
+    
     rkey[0] = tmp ^ rkey[0]
+    
     rkey[1] = rkey[0] ^ rkey[1]
     rkey[2] = rkey[1] ^ rkey[2]
     rkey[3] = rkey[2] ^ rkey[3]
 
+    
+    rkey[0] = hex(rkey[0])
+    rkey[1] = hex(rkey[1])
+    rkey[2] = hex(rkey[2])
+    rkey[3] = hex(rkey[3])
+
+
+
     return rkey
 
-print(foo(0))
+print(foo(1))
 
 
 
@@ -37,22 +55,3 @@ def foo():
     (rkey[2] >> val) & 0xFF
 
     val -= 8
-
-
-a = foo()
-b = foo()
-c = foo()
-d = foo()
-
-
-jal foo
-move $a $v0
-
-jal foo
-move $b $v0
-
-jal foo
-move $c $v0
-
-jal foo
-move $d $v0
