@@ -53,14 +53,41 @@ jal ROUND_OPERATION_ALL
 
 jal INIT_RKEY
 move $a0, $zero
-jal KEY_SCHEDULE
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-
 la $s0, result
 subi $s0, $s0, 4
-jal STORE_KEYS
-jal STORE_KEYS
+jal KEY_SCHEDULE
+jal STORE_KEYS #first iteration
+
+addi $a0, $a0, 1
+jal KEY_SCHEDULE
+jal STORE_KEYS #second iteration
+
+addi $a0, $a0, 1
+jal KEY_SCHEDULE
+jal STORE_KEYS #third iteration
+
+addi $a0, $a0, 1
+jal KEY_SCHEDULE
+jal STORE_KEYS #fourth iteration
+
+
+addi $a0, $a0, 1
+jal KEY_SCHEDULE
+jal STORE_KEYS #five iteration
+
+addi $a0, $a0, 1
+jal KEY_SCHEDULE
+jal STORE_KEYS #sixth iteration
+
+
+addi $a0, $a0, 1
+jal KEY_SCHEDULE
+jal STORE_KEYS #seventh iteration
+
+addi $a0, $a0, 1
+jal KEY_SCHEDULE
+jal STORE_KEYS #eigth iteration
+
 
 #move $a0, $zero
 #la $a1, rkey
@@ -348,7 +375,7 @@ ROUND_OPERATION_ALL_LOOP:			# initialize index as 0
 	
 
 KEY_SCHEDULE:
-	sub $sp, $sp, 44
+	sub $sp, $sp, 48
 	sw $ra, 0($sp)
 	sw $s1, 4($sp)
 	sw $s2, 8($sp)
@@ -359,6 +386,7 @@ KEY_SCHEDULE:
 	sw $s7, 32($sp)
 	sw $a0, 36($sp)
 	sw $a1, 40($sp)
+	sw $s0, 44($sp)
 	
 
 	
@@ -476,7 +504,8 @@ KEY_SCHEDULE:
 	lw $s7, 32($sp)
 	lw $a0, 36($sp)
 	lw $a1, 40($sp)
-	sub $sp, $sp, -44
+	lw $s0, 44($sp)
+	sub $sp, $sp, -48
 
 	jr $ra
 
