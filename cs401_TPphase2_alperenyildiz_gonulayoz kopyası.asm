@@ -50,7 +50,6 @@ addi $a1, $zero, 1
 jal READ_FILE
 jal ROUND_OPERATION_ALL
 
-j Exit
 
 jal INIT_RKEY
 move $a0, $zero
