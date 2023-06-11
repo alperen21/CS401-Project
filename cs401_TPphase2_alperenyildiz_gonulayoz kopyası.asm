@@ -333,7 +333,7 @@ ROUND_OPERATION:
 	xor $s4, $s4, $t2			# result = rkey[i] ^ T3[s[i] >> 24] ^ T1[(s[i+1] >> 16) & 0xff] ^ T2[s[i+2] >> 8 & 0xff] ^ T0[s[i+3] & 0xff]
 	
 	
-	
+	move $v0, $s4
 	
 	# END OF THE PROCEDURE #
 	lw $ra, 0($sp)
@@ -667,7 +667,6 @@ KEY_WHITENING:
 	slti $s3, $s2, 4
 	beq $s3, $zero, KW_LOOP_END
 	
-	
 	sll $s3, $s2, 2 # s3 = 4 * s2 (index multiplied with 4 to calculate address)
 	
 	add $s4, $s0, $s3 # s3 = &key[i]
@@ -726,6 +725,9 @@ jal INIT_RKEY
 move $s1, $zero #index for the loop
 la $s0, result #s0 = result
 
+la $s3, s
+
+
 E_LOOP:
 	slti $t0, $s1, 8
 	beq $t0, $zero, E_LOOP_EXIT
@@ -735,9 +737,9 @@ E_LOOP:
 	jal KEY_SCHEDULE
 	jal STORE_KEYS
 	
-	la $a1, rkeyy
-	jal ROUND_OPERATION_ALL
-	la $a1, t
+	la $a1, rkeyy	
+	
+	jal ROUND_OPERATION
 
 	addi $s1, $s1, 1
 j E_LOOP
