@@ -17,6 +17,10 @@ temp: .space 5000
 char_x: .ascii "x"
 message: .word 0x6bc1bee2, 0x2e409f96, 0xe93d7e11, 0x7393172a
 
+string: .space 8192
+msg:    .asciiz "Enter a string:"
+
+
 .text
 li $a0, 1024      			# Allocate 32 bytes
 li $v0, 9       			# System call number for sbrk
@@ -48,59 +52,25 @@ lb $t2, 0($t1)       			# Load the ASCII value into $t2
 addi $a0, $zero, 1
 addi $a1, $zero, 1
 
-jal READ_FILE
+#jal READ_FILE
+
+li $v0, 4
+la $a0, msg
+syscall
+
+li $v0, 8
+la $a0, string
+li $a1, 128
+syscall
+
+lw $a0, 0($a0)
+j Exit
+
 
 
 jal ENCRYPT
-j Exit
-jal ROUND_OPERATION_ALL
 
 
-jal INIT_RKEY
-move $a0, $zero
-la $s0, result
-subi $s0, $s0, 4
-jal KEY_SCHEDULE
-jal STORE_KEYS #first iteration
-
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #second iteration
-
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #third iteration
-
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #fourth iteration
-
-
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #five iteration
-
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #sixth iteration
-
-
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #seventh iteration
-
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #eigth iteration
-
-
-
-
-#move $a0, $zero
-#la $a1, rkey
-#jal ROUND_OPERATION
-
-j Exit
 READ_FILE:
 sub $sp, $sp, 4   			# we adjust the stack for saving return address and argument
 sw  $ra, 0($sp)   			# stores the return address in stack
