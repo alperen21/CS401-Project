@@ -130,6 +130,11 @@ def encryption(key, message, T0, T1, T2, T3):
     for i in range(4):
         s[i] = message[i] ^ key[i]
     
+    print("-*****")
+    for elem in s:
+        print(hex(elem))
+    print("-*****")
+    
     # Apply round operation eight times
     for i in range(8):
         rkey = key_schedule(i, key)

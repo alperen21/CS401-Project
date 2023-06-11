@@ -10,11 +10,12 @@ s:    .word 0xd82c07cd, 0xc2094cbd, 0x6baa9441, 0x42485e3f
 rkey: .word 0x82e2e670, 0x67a9c37d, 0xc8a7063b, 0x4da5e71f
 rkeyy: .space 4000
 rcon: .word 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
-key: .word 0x6920e299, 0xa5202a6d, 0x656e6368, 0x69746f2a
+key: .word 0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c
 t: .space 16
 test_data: .asciiz "f"
 temp: .space 5000
 char_x: .ascii "x"
+message: .word 0x6bc1bee2, 0x2e409f96, 0xe93d7e11, 0x7393172a
 
 .text
 li $a0, 1024      			# Allocate 32 bytes
@@ -88,6 +89,8 @@ addi $a0, $a0, 1
 jal KEY_SCHEDULE
 jal STORE_KEYS #eigth iteration
 
+
+jal KEY_WHITENING
 
 #move $a0, $zero
 #la $a1, rkey
@@ -605,6 +608,70 @@ INIT_RKEY:
 	
 	
 
+
+	lw $ra, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 16($sp)
+	lw $s4, 20($sp)
+	lw $s5, 24($sp)
+	lw $s6, 28($sp)
+	lw $s7, 32($sp)
+	lw $a0, 36($sp)
+	lw $a1, 40($sp)
+	sub $sp, $sp, -44
+	
+	jr $ra
+
+
+KEY_WHITENING:
+
+	sub $sp, $sp, 44
+	sw $ra, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 16($sp)
+	sw $s4, 20($sp)
+	sw $s5, 24($sp)
+	sw $s6, 28($sp)
+	sw $s7, 32($sp)
+	sw $a0, 36($sp)
+	sw $a1, 40($sp)
+	
+	la $s0, key	# s0 = key
+	la $s1, message	# s1 = message
+	la $s7, s
+	
+	move $s2, $zero	#s2 = index
+	
+	
+	
+	KW_LOOP:
+	slti $s3, $s2, 4
+	beq $s3, $zero, KW_LOOP_END
+	
+	
+	sll $s3, $s2, 2 # s3 = 4 * s2 (index multiplied with 4 to calculate address)
+	
+	add $s4, $s0, $s3 # s3 = &key[i]
+	lw $s4, 0($s4)	#s3 = key[i]
+	
+	add $s5, $s1, $s3 # s4 = &message[i]
+	lw $s5, 0($s5) # s4 = message[i]
+	
+	
+	xor $s6, $s4, $s5 # s6 = key[i] ^ message[i]
+	
+	
+	add $t0, $s7, $s3 #t0 = &s[i]
+	sw $s6, 0($t0) # s[i] = key[i] ^ message[i]
+	
+	addi $s2, $s2, 1
+	j KW_LOOP
+	KW_LOOP_END:
+	
+	
+	
 
 	lw $ra, 0($sp)
 	lw $s1, 4($sp)
