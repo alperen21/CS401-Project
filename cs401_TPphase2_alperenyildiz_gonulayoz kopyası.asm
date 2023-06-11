@@ -729,6 +729,7 @@ la $s3, s
 
 
 E_LOOP:
+	move $a0, $zero
 	slti $t0, $s1, 8
 	beq $t0, $zero, E_LOOP_EXIT
 	
@@ -739,6 +740,16 @@ E_LOOP:
 	
 	la $a1, rkeyy	
 	
+	jal ROUND_OPERATION
+
+	
+	addi $a0, $a0, 1
+	jal ROUND_OPERATION
+	
+	addi $a0, $a0, 1
+	jal ROUND_OPERATION
+	
+	addi $a0, $a0, 1
 	jal ROUND_OPERATION
 
 	addi $s1, $s1, 1
