@@ -741,16 +741,25 @@ E_LOOP:
 	la $a1, rkeyy	
 	
 	jal ROUND_OPERATION
-
+	move $s4, $v0
 	
 	addi $a0, $a0, 1
 	jal ROUND_OPERATION
+	move $s5, $v0
 	
 	addi $a0, $a0, 1
 	jal ROUND_OPERATION
+	move $s6, $v0
 	
 	addi $a0, $a0, 1
 	jal ROUND_OPERATION
+	move $s7, $v0
+	
+	
+	sw $s4 ,0($s3)
+	sw $s5 ,4($s3)
+	sw $s6 ,8($s3)
+	sw $s7 ,12($s3)
 
 	addi $s1, $s1, 1
 j E_LOOP
