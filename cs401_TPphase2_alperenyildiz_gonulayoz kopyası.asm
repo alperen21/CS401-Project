@@ -729,7 +729,6 @@ la $s3, s
 
 
 E_LOOP:
-	move $a0, $zero
 	slti $t0, $s1, 8
 	beq $t0, $zero, E_LOOP_EXIT
 	
@@ -737,6 +736,8 @@ E_LOOP:
 
 	jal KEY_SCHEDULE
 	jal STORE_KEYS
+	
+	move $a0, $zero
 	
 	la $a1, rkeyy	
 	
