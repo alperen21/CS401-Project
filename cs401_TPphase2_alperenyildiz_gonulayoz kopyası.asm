@@ -49,6 +49,10 @@ addi $a0, $zero, 1
 addi $a1, $zero, 1
 
 jal READ_FILE
+
+
+jal ENCRYPT
+j Exit
 jal ROUND_OPERATION_ALL
 
 
@@ -90,7 +94,7 @@ jal KEY_SCHEDULE
 jal STORE_KEYS #eigth iteration
 
 
-jal KEY_WHITENING
+
 
 #move $a0, $zero
 #la $a1, rkey
@@ -686,6 +690,62 @@ KEY_WHITENING:
 	sub $sp, $sp, -44
 	
 	jr $ra
+
+ENCRYPT:
+
+sub $sp, $sp, 44
+sw $ra, 0($sp)
+sw $s1, 4($sp)
+sw $s2, 8($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
+sw $s7, 32($sp)
+sw $a0, 36($sp)
+sw $a1, 40($sp)
+	
+jal KEY_WHITENING # s becomes the whitened key
+
+
+
+jal INIT_RKEY
+move $s1, $zero #index for the loop
+la $s0, result #s0 = result
+
+E_LOOP:
+	slti $t0, $s1, 8
+	beq $t0, $zero, E_LOOP_EXIT
+	
+	move $a0, $s1
+
+	jal KEY_SCHEDULE
+	jal STORE_KEYS
+	
+	la $a1, rkeyy
+	jal ROUND_OPERATION_ALL
+	la $a1, t
+
+	addi $s1, $s1, 1
+j E_LOOP
+E_LOOP_EXIT:
+
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+sub $sp, $sp, -44
+	
+jr $ra
+
+
 
 
 Exit:
