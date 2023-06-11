@@ -244,10 +244,17 @@ EXIT_IF_1:
 	
 ROUND_OPERATION:
 	# BEGINNING OF THE PROCEDURE #
-	sub $sp, $sp, 12
-	sw $ra, 8($sp)				# for return address
-	sw $a0, 4($sp)				# for index
-	sw $a1, 0($sp)				# for rkey
+	sub $sp, $sp, 44
+	sw $ra, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 16($sp)
+	sw $s4, 20($sp)
+	sw $s5, 24($sp)
+	sw $s6, 28($sp)
+	sw $s7, 32($sp)
+	sw $a0, 36($sp)
+	sw $a1, 40($sp)
 	
 	#move $s0, $zero			# i = 0 and is kept in $s0
 	#move $s1, $zero  			# j = 0 and is kept in $s1
@@ -329,11 +336,17 @@ ROUND_OPERATION:
 	
 	
 	# END OF THE PROCEDURE #
-	lw  $ra, 8($sp)				# for return address
-	lw $a0, 4($sp)				# for index
-	lw $a1, 0($sp)	 			# for rkey
-	sub $sp, $sp, -12  
-	addi $v0, $s4, 0
+	lw $ra, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 16($sp)
+	lw $s4, 20($sp)
+	lw $s5, 24($sp)
+	lw $s6, 28($sp)
+	lw $s7, 32($sp)
+	lw $a0, 36($sp)
+	lw $a1, 40($sp)
+	sub $sp, $sp, -44
 	jr $ra
 	
 INCREMENT_INDEX:

@@ -136,13 +136,13 @@ def encryption(key, message, T0, T1, T2, T3):
         rkey = key_schedule(i, key)
 
         print("rkey")
+        for elem in rkey:
+            print(hex(elem), end=" ")
+        print("rkey")
 
 
         s = round_operation(s, rkey, T0, T1, T2, T3)
 
-        for elem in s:
-            print(hex(elem), end=" ")
-        print("rkey")
 
         key = rkey
     
