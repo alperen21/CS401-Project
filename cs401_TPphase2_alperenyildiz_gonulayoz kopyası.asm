@@ -159,16 +159,23 @@ and $s1, $s1, $a0
 and $s2, $s2, $a0
 and $s3, $s3, $a0
 
-beq $s0, 0x0a, NEW_LINE_TRUE
-beq $s1, 0x000a, NEW_LINE_TRUE
-beq $s2, 0x00000a, NEW_LINE_TRUE
-beq $s3, 0x0000000a, NEW_LINE_TRUE
+li $s5, 0x0a000000
+beq $s0, $s5, NEW_LINE_TRUE
+
+li $s5, 0x000a0000
+beq $s1, $s5, NEW_LINE_TRUE
+
+li $s5, 0x00000a00
+beq $s2, $s5, NEW_LINE_TRUE
+
+li $s5, 0x0000000a
+beq $s3, $s5, NEW_LINE_TRUE
 
 j NEW_LINE_FALSE
 
 
 NEW_LINE_TRUE:
-addi $v0, $v0, 1
+addi $v0, $zero, 1
 
 
 lw $ra, 0($sp)
@@ -964,6 +971,31 @@ sw $s4, 12($t0)		# s[3] = string[4]
 jal PRINT_BUFFER
 jal ENCRYPT
 jal PRINT_BUFFER
+
+move $s5, $zero # boolean value to keep if the current group has a newline char
+
+move $a0, $s1
+jal IS_NEW_LINE
+or $s5, $s5, $v0
+
+move $a0, $s2
+jal IS_NEW_LINE
+or $s5, $s5, $v0
+
+move $a0, $s3
+jal IS_NEW_LINE
+or $s5, $s5, $v0
+
+move $a0, $s4
+jal IS_NEW_LINE
+or $s5, $s5, $v0
+
+
+move    $a0,$s5                 # put number into correct reg for syscall
+li      $v0,34                  # syscall number for "print hex"
+syscall 
+	
+
 
 lw $ra, 0($sp)
 lw $s1, 4($sp)
