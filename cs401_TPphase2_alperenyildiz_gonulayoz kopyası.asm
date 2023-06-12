@@ -66,6 +66,7 @@ syscall
 lw $a0, 0($a0)
 
 jal NORMALIZE_INPUT
+jal GROUP_TO_ENCRYPT
 
 j Exit
 
@@ -86,8 +87,6 @@ sw $s6, 28($sp)
 sw $s7, 32($sp)
 sw $a0, 36($sp)
 sw $a1, 40($sp)
-
-
 
 move $s1, $zero # index for the loop
 
@@ -135,6 +134,81 @@ move $t3, $zero
 move $t4, $zero
 ### while (int i < 4)###
 jal OPEN_FILE
+
+IS_NEW_LINE:
+sub $sp, $sp, 48
+sw $ra, 0($sp)
+sw $s1, 4($sp)
+sw $s2, 8($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
+sw $s7, 32($sp)
+sw $a0, 36($sp)
+sw $a1, 40($sp)
+sw $s0, 44($sp)
+
+addi $s0, $zero, 0xFF000000 #first mask
+addi $s1, $zero, 0x00FF0000 #second mask
+addi $s2, $zero, 0x0000FF00 #third mask
+addi $s3, $zero, 0x000000FF #fourth mask
+
+and $s0, $s0, $a0
+and $s1, $s1, $a0
+and $s2, $s2, $a0
+and $s3, $s3, $a0
+
+beq $s0, 0x0a, NEW_LINE_TRUE
+beq $s1, 0x000a, NEW_LINE_TRUE
+beq $s2, 0x00000a, NEW_LINE_TRUE
+beq $s3, 0x0000000a, NEW_LINE_TRUE
+
+j NEW_LINE_FALSE
+
+
+NEW_LINE_TRUE:
+addi $v0, $v0, 1
+
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+lw $s0, 44($sp)
+sub $sp, $sp, -48
+
+jr $ra
+
+
+NEW_LINE_FALSE:
+move $v0, $zero
+
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+lw $s0, 44($sp)
+sub $sp, $sp, -48
+
+jr $ra
+
+
+
+
 LOOP_1:
 	slti $t5, $t4, 4
 	beq $t5, $zero, EXIT_LOOP_1
@@ -859,6 +933,114 @@ lw $s0, 44($sp)
 sub $sp, $sp, -48
 
 jr $ra
+
+GROUP_TO_ENCRYPT:
+sub $sp, $sp, 48
+sw $ra, 0($sp)
+sw $s1, 4($sp)
+sw $s2, 8($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
+sw $s7, 32($sp)
+sw $a0, 36($sp)
+sw $a1, 40($sp)
+sw $s0, 44($sp)
+
+la $s0, string		# string is the input to be encrypted
+la $t0, s		# the address of s is kept in $t0
+
+lw $s1, 0($s0)		# $s1 = string[0]
+lw $s2, 4($s0)		# $s2 = string[0]
+lw $s3, 8($s0)		# $s3 = string[0]
+lw $s4, 12($s0)		# $s4 = string[0]
+
+sw $s1, 0($t0)		# s[0] = string[0]
+sw $s2, 4($t0)		# s[1] = string[1]
+sw $s3, 8($t0)		# s[2] = string[2]
+sw $s4, 12($t0)		# s[3] = string[4]
+
+jal PRINT_BUFFER
+jal ENCRYPT
+jal PRINT_BUFFER
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+lw $s0, 44($sp)
+sub $sp, $sp, -48
+jr $ra
+
+PRINT_BUFFER:
+	sub $sp, $sp, 48
+	sw $ra, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 16($sp)
+	sw $s4, 20($sp)
+	sw $s5, 24($sp)
+	sw $s6, 28($sp)
+	sw $s7, 32($sp)
+	sw $a0, 36($sp)
+	sw $a1, 40($sp)
+	sw $s0, 44($sp)
+	
+	la $s0, s
+	
+	lw $s1, 0($s0)
+	lw $s2, 4($s0)
+	lw $s3, 8($s0)
+	lw $s4, 12($s0)
+	
+	move    $a0,$s1                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
+	
+	li $a0, 32
+	li $v0, 11  # syscall number for printing character
+	syscall
+	
+	move    $a0,$s2                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
+    	
+    	li $a0, 32
+	li $v0, 11  # syscall number for printing character
+	syscall
+    	
+    	move    $a0,$s3                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
+    	
+    	li $a0, 32
+	li $v0, 11  # syscall number for printing character
+	syscall
+    	
+    	move    $a0,$s4                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
+	
+	lw $ra, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 16($sp)
+	lw $s4, 20($sp)
+	lw $s5, 24($sp)
+	lw $s6, 28($sp)
+	lw $s7, 32($sp)
+	lw $a0, 36($sp)
+	lw $a1, 40($sp)
+	lw $s0, 44($sp)
+	sub $sp, $sp, -48
+	jr $ra
 
 Exit:
 	li $v0,10
