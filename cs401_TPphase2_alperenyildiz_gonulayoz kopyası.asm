@@ -17,7 +17,7 @@ temp: .space 5000
 char_x: .ascii "x"
 message: .word 0x6bc1bee2, 0x2e409f96, 0xe93d7e11, 0x7393172a
 
-string: .space 8192
+string: .space 64
 msg:    .asciiz "Enter a string:"
 
 
@@ -64,11 +64,62 @@ li $a1, 128
 syscall
 
 lw $a0, 0($a0)
+
+jal NORMALIZE_INPUT
 j Exit
 
 
 
 jal ENCRYPT
+
+
+NORMALIZE_INPUT:
+sub $sp, $sp, 44
+sw $ra, 0($sp)
+sw $s1, 4($sp)
+sw $s2, 8($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
+sw $s7, 32($sp)
+sw $a0, 36($sp)
+sw $a1, 40($sp)
+
+
+
+move $s1, $zero # index for the loop
+
+NORMALIZE_INPUT_LOOP:
+slti $t0, $s1, 16
+beq $t0, $zero, NORMALIZE_INPUT_LOOP_EXIT
+
+la $s0, string
+sll $s2, $s1, 2
+add $s0, $s0, $s2
+lw $s3, 0($s0) # string[i]
+
+
+addi $s1, $s1, 1
+j NORMALIZE_INPUT_LOOP
+NORMALIZE_INPUT_LOOP_EXIT:
+
+
+
+jr $ra
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+sub $sp, $sp, -44
+
 
 
 READ_FILE:
