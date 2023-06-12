@@ -1,3 +1,7 @@
+
+
+
+
 .data  
 result: .space 4000
 T0: .space 4                          # the pointers to your lookup tables
@@ -15,10 +19,12 @@ t: .space 16
 test_data: .asciiz "f"
 temp: .space 5000
 char_x: .ascii "x"
-message: .word 0x6bc1bee2, 0x2e409f96, 0xe93d7e11, 0x7393172a
+message: .space 51
 
 string: .space 64
 msg:    .asciiz "Enter a string:"
+msg_prompt: .asciiz "Message is: "
+cipher_promp: .asciiz "Cipher is: "
 
 
 .text
@@ -63,9 +69,7 @@ la $a0, string
 li $a1, 128
 syscall
 
-la $t3, string
-
-lw $a0, 0($t3)
+lw $a0, 0($a0)
 
 jal NORMALIZE_INPUT
 
@@ -389,6 +393,7 @@ INCREMENT_INDEX:
 	slti $t0, $a0, 4			# checking if the index is greater than 3
 	bne $t0, $zero, EXIT_INCREMENT
 	
+	
 	subi $a0, $a0, 4
 	
 EXIT_INCREMENT:
@@ -687,7 +692,7 @@ KEY_WHITENING:
 	sw $a1, 40($sp)
 	
 	la $s0, key	# s0 = key
-	la $s1, s	# s1 = message
+	la $s1, message	# s1 = message
 	la $s7, s
 	
 	move $s2, $zero	#s2 = index
@@ -883,7 +888,7 @@ sw $a0, 36($sp)
 sw $a1, 40($sp)
 sw $s0, 44($sp)
 
-la $s0, string		# string is the input to be encrypted
+la $s0, string		# string is the input gto be encrypted
 la $s6, s		# the address of s is kept in $t0
 addi $s0, $s0, -16
 
@@ -904,7 +909,7 @@ sw $s4, 12($s6)		# s[3] = string[4]
 
 jal PRINT_BUFFER
 jal ENCRYPT
-jal PRINT_BUFFER
+jal PRINT_CIPHER
 
 move $s5, $zero # boolean value to keep if the current group has a newline char
 
@@ -1014,6 +1019,76 @@ PRINT_BUFFER:
 	lw $s0, 44($sp)
 	sub $sp, $sp, -48
 	jr $ra
+	
+	
+	
+PRINT_CIPHER:
+	sub $sp, $sp, 48
+	sw $ra, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 16($sp)
+	sw $s4, 20($sp)
+	sw $s5, 24($sp)
+	sw $s6, 28($sp)
+	sw $s7, 32($sp)
+	sw $a0, 36($sp)
+	sw $a1, 40($sp)
+	sw $s0, 44($sp)
+	
+	la $s0, result
+	
+	lw $s1, 0($s0)
+	lw $s2, 4($s0)
+	lw $s3, 8($s0)
+	lw $s4, 12($s0)
+	
+	move    $a0,$s1                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
+	
+	li $a0, 32
+	li $v0, 11  # syscall number for printing character
+	syscall
+	
+	move    $a0,$s2                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
+    	
+    	li $a0, 32
+	li $v0, 11  # syscall number for printing character
+	syscall
+    	
+    	move    $a0,$s3                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
+    	
+    	li $a0, 32
+	li $v0, 11  # syscall number for printing character
+	syscall
+    	
+    	move    $a0,$s4                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
+	
+	li $a0, '\n'
+	li $v0, 11
+	syscall
+	
+	lw $ra, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 16($sp)
+	lw $s4, 20($sp)
+	lw $s5, 24($sp)
+	lw $s6, 28($sp)
+	lw $s7, 32($sp)
+	lw $a0, 36($sp)
+	lw $a1, 40($sp)
+	lw $s0, 44($sp)
+	sub $sp, $sp, -48
+	jr $ra
+	
 IS_NEW_LINE:
 sub $sp, $sp, 48
 sw $ra, 0($sp)
