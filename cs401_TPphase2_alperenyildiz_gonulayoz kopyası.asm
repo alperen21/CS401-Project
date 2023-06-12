@@ -65,8 +65,7 @@ syscall
 
 lw $a0, 0($a0)
 
-addi $a0, $zero, 0x69736964
-jal REVERSE_WORD
+jal NORMALIZE_INPUT
 
 j Exit
 
@@ -104,14 +103,13 @@ lw $s3, 0($s0) # string[i]
 move $a0, $s3
 
 jal REVERSE_WORD
+sw $v0, 0($s0)
 
 addi $s1, $s1, 1
 j NORMALIZE_INPUT_LOOP
 NORMALIZE_INPUT_LOOP_EXIT:
 
 
-
-jr $ra
 
 lw $ra, 0($sp)
 lw $s1, 4($sp)
@@ -125,7 +123,7 @@ lw $a0, 36($sp)
 lw $a1, 40($sp)
 sub $sp, $sp, -44
 
-
+jr $ra
 
 READ_FILE:
 sub $sp, $sp, 4   			# we adjust the stack for saving return address and argument
@@ -810,7 +808,7 @@ jr $ra
 
 
 REVERSE_WORD:
-sub $sp, $sp, 44
+sub $sp, $sp, 48
 sw $ra, 0($sp)
 sw $s1, 4($sp)
 sw $s2, 8($sp)
@@ -821,6 +819,7 @@ sw $s6, 28($sp)
 sw $s7, 32($sp)
 sw $a0, 36($sp)
 sw $a1, 40($sp)
+sw $s0, 44($sp)
 
 
 addi $s0, $zero, 0xFF000000 #first mask
@@ -856,7 +855,10 @@ lw $s6, 28($sp)
 lw $s7, 32($sp)
 lw $a0, 36($sp)
 lw $a1, 40($sp)
-sub $sp, $sp, -44
+lw $s0, 44($sp)
+sub $sp, $sp, -48
+
+jr $ra
 
 Exit:
 	li $v0,10
