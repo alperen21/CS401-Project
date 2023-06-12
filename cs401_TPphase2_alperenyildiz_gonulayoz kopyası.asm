@@ -76,7 +76,7 @@ jal ENCRYPT
 
 
 NORMALIZE_INPUT:
-sub $sp, $sp, 44
+sub $sp, $sp, 48
 sw $ra, 0($sp)
 sw $s1, 4($sp)
 sw $s2, 8($sp)
@@ -87,6 +87,7 @@ sw $s6, 28($sp)
 sw $s7, 32($sp)
 sw $a0, 36($sp)
 sw $a1, 40($sp)
+sw $s0, 44($sp)
 
 move $s1, $zero # index for the loop
 
@@ -120,7 +121,8 @@ lw $s6, 28($sp)
 lw $s7, 32($sp)
 lw $a0, 36($sp)
 lw $a1, 40($sp)
-sub $sp, $sp, -44
+lw $s0, 44($sp)
+sub $sp, $sp, -48
 
 jr $ra
 
@@ -810,7 +812,7 @@ KEY_WHITENING:
 
 ENCRYPT:
 
-sub $sp, $sp, 44
+sub $sp, $sp, 48
 sw $ra, 0($sp)
 sw $s1, 4($sp)
 sw $s2, 8($sp)
@@ -821,6 +823,7 @@ sw $s6, 28($sp)
 sw $s7, 32($sp)
 sw $a0, 36($sp)
 sw $a1, 40($sp)
+sw $s0, 44($sp)
 	
 jal KEY_WHITENING # s becomes the whitened key
 
@@ -882,7 +885,8 @@ lw $s6, 28($sp)
 lw $s7, 32($sp)
 lw $a0, 36($sp)
 lw $a1, 40($sp)
-sub $sp, $sp, -44
+lw $s0, 44($sp)
+sub $sp, $sp, -48
 	
 jr $ra
 
@@ -956,17 +960,23 @@ sw $a1, 40($sp)
 sw $s0, 44($sp)
 
 la $s0, string		# string is the input to be encrypted
-la $t0, s		# the address of s is kept in $t0
+la $s6, s		# the address of s is kept in $t0
+addi $s0, $s0, -16
+
+
+GROUP_TO_ENCRYPT_LOOP:
+
+addi $s0, $s0, 16
 
 lw $s1, 0($s0)		# $s1 = string[0]
 lw $s2, 4($s0)		# $s2 = string[0]
 lw $s3, 8($s0)		# $s3 = string[0]
 lw $s4, 12($s0)		# $s4 = string[0]
 
-sw $s1, 0($t0)		# s[0] = string[0]
-sw $s2, 4($t0)		# s[1] = string[1]
-sw $s3, 8($t0)		# s[2] = string[2]
-sw $s4, 12($t0)		# s[3] = string[4]
+sw $s1, 0($s6)		# s[0] = string[0]
+sw $s2, 4($s6)		# s[1] = string[1]
+sw $s3, 8($s6)		# s[2] = string[2]
+sw $s4, 12($s6)		# s[3] = string[4]
 
 jal PRINT_BUFFER
 jal ENCRYPT
@@ -989,6 +999,9 @@ or $s5, $s5, $v0
 move $a0, $s4
 jal IS_NEW_LINE
 or $s5, $s5, $v0
+
+
+beq $s5, 0, GROUP_TO_ENCRYPT_LOOP
 
 
 move    $a0,$s5                 # put number into correct reg for syscall
