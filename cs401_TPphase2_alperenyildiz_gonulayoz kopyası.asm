@@ -1028,6 +1028,10 @@ PRINT_BUFFER:
     	li      $v0,34                  # syscall number for "print hex"
     	syscall 
 	
+	li $a0, '\n'
+	li $v0, 11
+	syscall
+	
 	lw $ra, 0($sp)
 	lw $s1, 4($sp)
 	lw $s2, 8($sp)
