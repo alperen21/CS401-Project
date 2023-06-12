@@ -52,7 +52,7 @@ lb $t2, 0($t1)       			# Load the ASCII value into $t2
 addi $a0, $zero, 1
 addi $a1, $zero, 1
 
-#jal READ_FILE
+
 
 li $v0, 4
 la $a0, msg
@@ -66,6 +66,9 @@ syscall
 lw $a0, 0($a0)
 
 jal NORMALIZE_INPUT
+
+jal READ_FILE
+
 jal GROUP_TO_ENCRYPT
 
 j Exit
