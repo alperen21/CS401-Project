@@ -53,7 +53,7 @@ addi $a0, $zero, 1
 addi $a1, $zero, 1
 
 
-
+jal READ_FILE
 li $v0, 4
 la $a0, msg
 syscall
@@ -67,7 +67,7 @@ lw $a0, 0($a0)
 
 jal NORMALIZE_INPUT
 
-jal READ_FILE
+
 
 jal GROUP_TO_ENCRYPT
 
@@ -139,88 +139,6 @@ move $t3, $zero
 move $t4, $zero
 ### while (int i < 4)###
 jal OPEN_FILE
-
-IS_NEW_LINE:
-sub $sp, $sp, 48
-sw $ra, 0($sp)
-sw $s1, 4($sp)
-sw $s2, 8($sp)
-sw $s3, 16($sp)
-sw $s4, 20($sp)
-sw $s5, 24($sp)
-sw $s6, 28($sp)
-sw $s7, 32($sp)
-sw $a0, 36($sp)
-sw $a1, 40($sp)
-sw $s0, 44($sp)
-
-addi $s0, $zero, 0xFF000000 #first mask
-addi $s1, $zero, 0x00FF0000 #second mask
-addi $s2, $zero, 0x0000FF00 #third mask
-addi $s3, $zero, 0x000000FF #fourth mask
-
-and $s0, $s0, $a0
-and $s1, $s1, $a0
-and $s2, $s2, $a0
-and $s3, $s3, $a0
-
-li $s5, 0x0a000000
-beq $s0, $s5, NEW_LINE_TRUE
-
-li $s5, 0x000a0000
-beq $s1, $s5, NEW_LINE_TRUE
-
-li $s5, 0x00000a00
-beq $s2, $s5, NEW_LINE_TRUE
-
-li $s5, 0x0000000a
-beq $s3, $s5, NEW_LINE_TRUE
-
-j NEW_LINE_FALSE
-
-
-NEW_LINE_TRUE:
-addi $v0, $zero, 1
-
-
-lw $ra, 0($sp)
-lw $s1, 4($sp)
-lw $s2, 8($sp)
-lw $s3, 16($sp)
-lw $s4, 20($sp)
-lw $s5, 24($sp)
-lw $s6, 28($sp)
-lw $s7, 32($sp)
-lw $a0, 36($sp)
-lw $a1, 40($sp)
-lw $s0, 44($sp)
-sub $sp, $sp, -48
-
-jr $ra
-
-
-NEW_LINE_FALSE:
-move $v0, $zero
-
-
-lw $ra, 0($sp)
-lw $s1, 4($sp)
-lw $s2, 8($sp)
-lw $s3, 16($sp)
-lw $s4, 20($sp)
-lw $s5, 24($sp)
-lw $s6, 28($sp)
-lw $s7, 32($sp)
-lw $a0, 36($sp)
-lw $a1, 40($sp)
-lw $s0, 44($sp)
-sub $sp, $sp, -48
-
-jr $ra
-
-
-
-
 LOOP_1:
 	slti $t5, $t4, 4
 	beq $t5, $zero, EXIT_LOOP_1
@@ -351,6 +269,7 @@ EXIT_IF_1:
 	move $v0, $t1
 	sub $sp, $sp, -8  
 	jr $ra
+	
 	
 ROUND_OPERATION:
 	# BEGINNING OF THE PROCEDURE #
@@ -1093,6 +1012,83 @@ PRINT_BUFFER:
 	lw $s0, 44($sp)
 	sub $sp, $sp, -48
 	jr $ra
+IS_NEW_LINE:
+sub $sp, $sp, 48
+sw $ra, 0($sp)
+sw $s1, 4($sp)
+sw $s2, 8($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
+sw $s7, 32($sp)
+sw $a0, 36($sp)
+sw $a1, 40($sp)
+sw $s0, 44($sp)
+
+addi $s0, $zero, 0xFF000000 #first mask
+addi $s1, $zero, 0x00FF0000 #second mask
+addi $s2, $zero, 0x0000FF00 #third mask
+addi $s3, $zero, 0x000000FF #fourth mask
+
+and $s0, $s0, $a0
+and $s1, $s1, $a0
+and $s2, $s2, $a0
+and $s3, $s3, $a0
+
+li $s5, 0x0a000000
+beq $s0, $s5, NEW_LINE_TRUE
+
+li $s5, 0x000a0000
+beq $s1, $s5, NEW_LINE_TRUE
+
+li $s5, 0x00000a00
+beq $s2, $s5, NEW_LINE_TRUE
+
+li $s5, 0x0000000a
+beq $s3, $s5, NEW_LINE_TRUE
+
+j NEW_LINE_FALSE
+
+
+NEW_LINE_TRUE:
+addi $v0, $zero, 1
+
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+lw $s0, 44($sp)
+sub $sp, $sp, -48
+
+jr $ra
+
+
+NEW_LINE_FALSE:
+move $v0, $zero
+
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+lw $s0, 44($sp)
+sub $sp, $sp, -48
+
+jr $ra
 
 Exit:
 	li $v0,10
