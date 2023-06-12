@@ -10,13 +10,16 @@ s:    .word 0xd82c07cd, 0xc2094cbd, 0x6baa9441, 0x42485e3f
 rkey: .word 0x82e2e670, 0x67a9c37d, 0xc8a7063b, 0x4da5e71f
 rkeyy: .space 4000
 rcon: .word 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
-ourkey: .wor
 key: .word 0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c
 t: .space 16
 test_data: .asciiz "f"
 temp: .space 5000
 char_x: .ascii "x"
 message: .word 0x6bc1bee2, 0x2e409f96, 0xe93d7e11, 0x7393172a
+
+string: .space 64
+msg:    .asciiz "Enter a string:"
+
 
 .text
 li $a0, 1024      			# Allocate 32 bytes
@@ -49,59 +52,85 @@ lb $t2, 0($t1)       			# Load the ASCII value into $t2
 addi $a0, $zero, 1
 addi $a1, $zero, 1
 
+
 jal READ_FILE
+li $v0, 4
+la $a0, msg
+syscall
+
+li $v0, 8
+la $a0, string
+li $a1, 128
+syscall
+
+la $t3, string
+
+lw $a0, 0($t3)
+
+jal NORMALIZE_INPUT
+
+
+
+jal GROUP_TO_ENCRYPT
+
+j Exit
+
 
 
 jal ENCRYPT
-j Exit
-jal ROUND_OPERATION_ALL
 
 
-jal INIT_RKEY
-move $a0, $zero
-la $s0, result
-subi $s0, $s0, 4
-jal KEY_SCHEDULE
-jal STORE_KEYS #first iteration
+NORMALIZE_INPUT:
+sub $sp, $sp, 48
+sw $ra, 0($sp)
+sw $s1, 4($sp)
+sw $s2, 8($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
+sw $s7, 32($sp)
+sw $a0, 36($sp)
+sw $a1, 40($sp)
+sw $s0, 44($sp)
 
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #second iteration
+move $s1, $zero # index for the loop
 
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #third iteration
+NORMALIZE_INPUT_LOOP:
+slti $t0, $s1, 16
+beq $t0, $zero, NORMALIZE_INPUT_LOOP_EXIT
 
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #fourth iteration
+la $s0, string
+sll $s2, $s1, 2
+add $s0, $s0, $s2
+lw $s3, 0($s0) # string[i]
 
+move $a0, $s3
 
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #five iteration
+jal REVERSE_WORD
+sw $v0, 0($s0)
 
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #sixth iteration
-
-
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #seventh iteration
-
-addi $a0, $a0, 1
-jal KEY_SCHEDULE
-jal STORE_KEYS #eigth iteration
+addi $s1, $s1, 1
+j NORMALIZE_INPUT_LOOP
+NORMALIZE_INPUT_LOOP_EXIT:
 
 
 
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+lw $s0, 44($sp)
+sub $sp, $sp, -48
 
-#move $a0, $zero
-#la $a1, rkey
-#jal ROUND_OPERATION
+jr $ra
 
-j Exit
 READ_FILE:
 sub $sp, $sp, 4   			# we adjust the stack for saving return address and argument
 sw  $ra, 0($sp)   			# stores the return address in stack
@@ -243,6 +272,7 @@ EXIT_IF_1:
 	sub $sp, $sp, -8  
 	jr $ra
 	
+	
 ROUND_OPERATION:
 	# BEGINNING OF THE PROCEDURE #
 	sub $sp, $sp, 44
@@ -333,6 +363,9 @@ ROUND_OPERATION:
 	
 	xor $s4, $s4, $t2			# result = rkey[i] ^ T3[s[i] >> 24] ^ T1[(s[i+1] >> 16) & 0xff] ^ T2[s[i+2] >> 8 & 0xff] ^ T0[s[i+3] & 0xff]
 	
+	
+	move $v0, $s4
+	
 	# END OF THE PROCEDURE #
 	lw $ra, 0($sp)
 	lw $s1, 4($sp)
@@ -364,7 +397,6 @@ EXIT_INCREMENT:
 	lw $a0, 0($sp)				# for index 
 	sub $sp, $sp, -8  
 	jr $ra
-	
 ROUND_OPERATION_ALL:
 	sub $sp, $sp, 4
 	sw $ra, 0($sp)
@@ -373,6 +405,7 @@ ROUND_OPERATION_ALL:
 ROUND_OPERATION_ALL_LOOP:			# initialize index as 0
 	slti $t5, $t4, 4			# check if index is smaller than 4
 	beq $t5, 0, EXIT_LOOP			# if index is not smaller than 4, exit loop
+	
 	
 	la $a1, rkey
 	move $a0, $t4
@@ -506,6 +539,11 @@ KEY_SCHEDULE:
 	xor $s4, $s4, $s3
 	sw $s4, 0($s0)				# rkeyy[1] = rkeyy[1] ^ rkeyy[0]
 	
+	# s1 = rkey[0]
+	# s2 = rkey[1]
+	# s3 = rkey[2]
+	# s4 = rkey[3]
+	
 	
 	lw $ra, 0($sp)
 	lw $s1, 4($sp)
@@ -538,9 +576,12 @@ STORE_KEYS:
 	
 	la $s1, rkeyy		# s1 = &rkeyy[0]
 	
+	
 	addi $s0, $s0, 4
 	lw $s2, 0($s1)		# s2 = rkeyy[0]
 	sw $s2, 0($s0)		# result[0] = rkeyy[0]
+	
+	
 	
 	addi $s1, $s1, 4
 	addi $s0, $s0, 4
@@ -556,6 +597,12 @@ STORE_KEYS:
 	addi $s0, $s0, 4
 	lw $s2, 0($s1)		# s2 = rkeyy[3]
 	sw $s2, 0($s0)		# result[3] = rkeyy[3]
+	
+	
+	
+	
+	
+	
 	
 	lw $ra, 0($sp)
 	lw $s1, 4($sp)
@@ -640,13 +687,14 @@ KEY_WHITENING:
 	sw $a1, 40($sp)
 	
 	la $s0, key	# s0 = key
-	la $s1, message	# s1 = message
+	la $s1, s	# s1 = message
 	la $s7, s
 	
 	move $s2, $zero	#s2 = index
 	
 	
-KW_LOOP:
+	
+	KW_LOOP:
 	slti $s3, $s2, 4
 	beq $s3, $zero, KW_LOOP_END
 	
@@ -668,6 +716,9 @@ KW_LOOP:
 	addi $s2, $s2, 1
 	j KW_LOOP
 	KW_LOOP_END:
+	
+	
+	
 
 	lw $ra, 0($sp)
 	lw $s1, 4($sp)
@@ -685,7 +736,220 @@ KW_LOOP:
 
 ENCRYPT:
 
-	sub $sp, $sp, 44
+sub $sp, $sp, 48
+sw $ra, 0($sp)
+sw $s1, 4($sp)
+sw $s2, 8($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
+sw $s7, 32($sp)
+sw $a0, 36($sp)
+sw $a1, 40($sp)
+sw $s0, 44($sp)
+	
+jal KEY_WHITENING # s becomes the whitened key
+
+
+
+jal INIT_RKEY
+move $s1, $zero #index for the loop
+la $s0, result #s0 = result
+
+la $s3, s
+
+
+E_LOOP:
+	slti $t0, $s1, 8
+	beq $t0, $zero, E_LOOP_EXIT
+	
+	move $a0, $s1
+
+	jal KEY_SCHEDULE
+	jal STORE_KEYS
+	
+	move $a0, $zero
+	
+	la $a1, rkeyy	
+	
+	jal ROUND_OPERATION
+	move $s4, $v0
+	
+	addi $a0, $a0, 1
+	jal ROUND_OPERATION
+	move $s5, $v0
+	
+	addi $a0, $a0, 1
+	jal ROUND_OPERATION
+	move $s6, $v0
+	
+	addi $a0, $a0, 1
+	jal ROUND_OPERATION
+	move $s7, $v0
+	
+	
+	sw $s4 ,0($s3)
+	sw $s5 ,4($s3)
+	sw $s6 ,8($s3)
+	sw $s7 ,12($s3)
+
+	addi $s1, $s1, 1
+j E_LOOP
+E_LOOP_EXIT:
+
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+lw $s0, 44($sp)
+sub $sp, $sp, -48
+	
+jr $ra
+
+
+
+REVERSE_WORD:
+sub $sp, $sp, 48
+sw $ra, 0($sp)
+sw $s1, 4($sp)
+sw $s2, 8($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
+sw $s7, 32($sp)
+sw $a0, 36($sp)
+sw $a1, 40($sp)
+sw $s0, 44($sp)
+
+
+addi $s0, $zero, 0xFF000000 #first mask
+addi $s1, $zero, 0x00FF0000 #second mask
+addi $s2, $zero, 0x0000FF00 #third mask
+addi $s3, $zero, 0x000000FF #fourth mask
+
+and $s0, $s0, $a0 #first char
+and $s1, $s1, $a0 #second char
+and $s2, $s2, $a0 #third char
+and $s3, $s3, $a0 #fourth char
+
+srl $s0, $s0, 24 #reversed first char
+srl $s1, $s1, 8 #reversed second char
+sll $s2 $s2, 8 #reversed third char
+sll $s3, $s3, 24 #reversed fourth char
+
+
+move $v0, $zero #initialize the return register to 0
+xor $v0, $v0, $s0
+xor $v0, $v0, $s1
+xor $v0, $v0, $s2
+xor $v0, $v0, $s3
+   
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+lw $s0, 44($sp)
+sub $sp, $sp, -48
+
+jr $ra
+
+GROUP_TO_ENCRYPT:
+sub $sp, $sp, 48
+sw $ra, 0($sp)
+sw $s1, 4($sp)
+sw $s2, 8($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
+sw $s7, 32($sp)
+sw $a0, 36($sp)
+sw $a1, 40($sp)
+sw $s0, 44($sp)
+
+la $s0, string		# string is the input to be encrypted
+la $s6, s		# the address of s is kept in $t0
+addi $s0, $s0, -16
+
+
+GROUP_TO_ENCRYPT_LOOP:
+
+addi $s0, $s0, 16
+
+lw $s1, 0($s0)		# $s1 = string[0]
+lw $s2, 4($s0)		# $s2 = string[0]
+lw $s3, 8($s0)		# $s3 = string[0]
+lw $s4, 12($s0)		# $s4 = string[0]
+
+sw $s1, 0($s6)		# s[0] = string[0]
+sw $s2, 4($s6)		# s[1] = string[1]
+sw $s3, 8($s6)		# s[2] = string[2]
+sw $s4, 12($s6)		# s[3] = string[4]
+
+jal PRINT_BUFFER
+jal ENCRYPT
+jal PRINT_BUFFER
+
+move $s5, $zero # boolean value to keep if the current group has a newline char
+
+move $a0, $s1
+jal IS_NEW_LINE
+or $s5, $s5, $v0
+
+move $a0, $s2
+jal IS_NEW_LINE
+or $s5, $s5, $v0
+
+move $a0, $s3
+jal IS_NEW_LINE
+or $s5, $s5, $v0
+
+move $a0, $s4
+jal IS_NEW_LINE
+or $s5, $s5, $v0
+
+
+beq $s5, 0, GROUP_TO_ENCRYPT_LOOP
+
+
+move    $a0,$s5                 # put number into correct reg for syscall
+li      $v0,34                  # syscall number for "print hex"
+syscall 
+	
+
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+lw $s0, 44($sp)
+sub $sp, $sp, -48
+jr $ra
+
+PRINT_BUFFER:
+	sub $sp, $sp, 48
 	sw $ra, 0($sp)
 	sw $s1, 4($sp)
 	sw $s2, 8($sp)
@@ -696,32 +960,47 @@ ENCRYPT:
 	sw $s7, 32($sp)
 	sw $a0, 36($sp)
 	sw $a1, 40($sp)
+	sw $s0, 44($sp)
 	
-	jal KEY_WHITENING # s becomes the whitened key
+	la $s0, s
 	
-	jal INIT_RKEY
-	move $s1, $zero #index for the loop j = 0
-	la $s0, result #s0 = result
+	lw $s1, 0($s0)
+	lw $s2, 4($s0)
+	lw $s3, 8($s0)
+	lw $s4, 12($s0)
 	
-	la $s3, s
-E_LOOP:
-	slti $t0, $s1, 8
-	beq $t0, $zero, E_LOOP_EXIT
+	move    $a0,$s1                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
 	
-	move $a0, $s1
-
-	jal KEY_SCHEDULE
-	jal STORE_KEYS
+	li $a0, 32
+	li $v0, 11  # syscall number for printing character
+	syscall
 	
-	la $a1, rkeyy
-	jal ROUND_OPERATION_ALL
-	la $a1, t
-
-	addi $s1, $s1, 1
-	j E_LOOP
-
-
-E_LOOP_EXIT:
+	move    $a0,$s2                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
+    	
+    	li $a0, 32
+	li $v0, 11  # syscall number for printing character
+	syscall
+    	
+    	move    $a0,$s3                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
+    	
+    	li $a0, 32
+	li $v0, 11  # syscall number for printing character
+	syscall
+    	
+    	move    $a0,$s4                 # put number into correct reg for syscall
+    	li      $v0,34                  # syscall number for "print hex"
+    	syscall 
+	
+	li $a0, '\n'
+	li $v0, 11
+	syscall
+	
 	lw $ra, 0($sp)
 	lw $s1, 4($sp)
 	lw $s2, 8($sp)
@@ -732,12 +1011,86 @@ E_LOOP_EXIT:
 	lw $s7, 32($sp)
 	lw $a0, 36($sp)
 	lw $a1, 40($sp)
-	sub $sp, $sp, -44
-	
+	lw $s0, 44($sp)
+	sub $sp, $sp, -48
 	jr $ra
+IS_NEW_LINE:
+sub $sp, $sp, 48
+sw $ra, 0($sp)
+sw $s1, 4($sp)
+sw $s2, 8($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
+sw $s7, 32($sp)
+sw $a0, 36($sp)
+sw $a1, 40($sp)
+sw $s0, 44($sp)
+
+addi $s0, $zero, 0xFF000000 #first mask
+addi $s1, $zero, 0x00FF0000 #second mask
+addi $s2, $zero, 0x0000FF00 #third mask
+addi $s3, $zero, 0x000000FF #fourth mask
+
+and $s0, $s0, $a0
+and $s1, $s1, $a0
+and $s2, $s2, $a0
+and $s3, $s3, $a0
+
+li $s5, 0x0a000000
+beq $s0, $s5, NEW_LINE_TRUE
+
+li $s5, 0x000a0000
+beq $s1, $s5, NEW_LINE_TRUE
+
+li $s5, 0x00000a00
+beq $s2, $s5, NEW_LINE_TRUE
+
+li $s5, 0x0000000a
+beq $s3, $s5, NEW_LINE_TRUE
+
+j NEW_LINE_FALSE
 
 
+NEW_LINE_TRUE:
+addi $v0, $zero, 1
 
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+lw $s0, 44($sp)
+sub $sp, $sp, -48
+
+jr $ra
+
+
+NEW_LINE_FALSE:
+move $v0, $zero
+
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+lw $s0, 44($sp)
+sub $sp, $sp, -48
+
+jr $ra
 
 Exit:
 	li $v0,10
