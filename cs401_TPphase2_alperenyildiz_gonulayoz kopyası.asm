@@ -65,7 +65,9 @@ syscall
 
 lw $a0, 0($a0)
 
-jal NORMALIZE_INPUT
+addi $a0, $zero, 0x69736964
+jal REVERSE_WORD
+
 j Exit
 
 
@@ -99,6 +101,9 @@ sll $s2, $s1, 2
 add $s0, $s0, $s2
 lw $s3, 0($s0) # string[i]
 
+move $a0, $s3
+
+jal REVERSE_WORD
 
 addi $s1, $s1, 1
 j NORMALIZE_INPUT_LOOP
@@ -804,6 +809,54 @@ jr $ra
 
 
 
+REVERSE_WORD:
+sub $sp, $sp, 44
+sw $ra, 0($sp)
+sw $s1, 4($sp)
+sw $s2, 8($sp)
+sw $s3, 16($sp)
+sw $s4, 20($sp)
+sw $s5, 24($sp)
+sw $s6, 28($sp)
+sw $s7, 32($sp)
+sw $a0, 36($sp)
+sw $a1, 40($sp)
+
+
+addi $s0, $zero, 0xFF000000 #first mask
+addi $s1, $zero, 0x00FF0000 #second mask
+addi $s2, $zero, 0x0000FF00 #third mask
+addi $s3, $zero, 0x000000FF #fourth mask
+
+and $s0, $s0, $a0 #first char
+and $s1, $s1, $a0 #second char
+and $s2, $s2, $a0 #third char
+and $s3, $s3, $a0 #fourth char
+
+srl $s0, $s0, 24 #reversed first char
+srl $s1, $s1, 8 #reversed second char
+sll $s2 $s2, 8 #reversed third char
+sll $s3, $s3, 24 #reversed fourth char
+
+
+move $v0, $zero #initialize the return register to 0
+xor $v0, $v0, $s0
+xor $v0, $v0, $s1
+xor $v0, $v0, $s2
+xor $v0, $v0, $s3
+   
+
+lw $ra, 0($sp)
+lw $s1, 4($sp)
+lw $s2, 8($sp)
+lw $s3, 16($sp)
+lw $s4, 20($sp)
+lw $s5, 24($sp)
+lw $s6, 28($sp)
+lw $s7, 32($sp)
+lw $a0, 36($sp)
+lw $a1, 40($sp)
+sub $sp, $sp, -44
 
 Exit:
 	li $v0,10
