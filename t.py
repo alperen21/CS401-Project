@@ -1,1 +1,0 @@
-print(hex(int("0x00000a75", base=16)<<28))

@@ -1,7 +1,3 @@
-
-
-
-
 .data  
 result: .space 4000
 T0: .space 4                          # the pointers to your lookup tables
@@ -11,20 +7,18 @@ T3:  .space 4
 fin: .asciiz "/Users/alperenyildiz/CS401-Project/tables.dat"      # put the fullpath name of the file AES.dat here
 buffer: .space 20000                    # temporary buffer to read from file
 s:    .word 0xd82c07cd, 0xc2094cbd, 0x6baa9441, 0x42485e3f
-rkey: .word 0x82e2e670, 0x67a9c37d, 0xc8a7063b, 0x4da5e71f
+rkey: .word 0x3a292072, 0x616e646f, 0x6d206b65, 0x79206865
 rkeyy: .space 4000
 rcon: .word 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
-key: .word 0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c
+key: .word 0x3a292072, 0x616e646f, 0x6d206b65, 0x79206865
 t: .space 16
 test_data: .asciiz "f"
 temp: .space 5000
 char_x: .ascii "x"
-message: .space 51
+message: .word 0x63735f34, 0x30315f74, 0x65726d5f, 0x70726f6a
 
 string: .space 64
 msg:    .asciiz "Enter a string:"
-msg_prompt: .asciiz "Message is: "
-cipher_promp: .asciiz "Cipher is: "
 
 
 .text
@@ -63,6 +57,7 @@ jal READ_FILE
 li $v0, 4
 la $a0, msg
 syscall
+
 
 li $v0, 8
 la $a0, string
@@ -392,7 +387,6 @@ INCREMENT_INDEX:
 	
 	slti $t0, $a0, 4			# checking if the index is greater than 3
 	bne $t0, $zero, EXIT_INCREMENT
-	
 	
 	subi $a0, $a0, 4
 	
@@ -888,7 +882,7 @@ sw $a0, 36($sp)
 sw $a1, 40($sp)
 sw $s0, 44($sp)
 
-la $s0, string		# string is the input gto be encrypted
+la $s0, string		# string is the input to be encrypted
 la $s6, s		# the address of s is kept in $t0
 addi $s0, $s0, -16
 
@@ -909,7 +903,7 @@ sw $s4, 12($s6)		# s[3] = string[4]
 
 jal PRINT_BUFFER
 jal ENCRYPT
-jal PRINT_CIPHER
+jal PRINT_BUFFER
 
 move $s5, $zero # boolean value to keep if the current group has a newline char
 
@@ -1019,76 +1013,6 @@ PRINT_BUFFER:
 	lw $s0, 44($sp)
 	sub $sp, $sp, -48
 	jr $ra
-	
-	
-	
-PRINT_CIPHER:
-	sub $sp, $sp, 48
-	sw $ra, 0($sp)
-	sw $s1, 4($sp)
-	sw $s2, 8($sp)
-	sw $s3, 16($sp)
-	sw $s4, 20($sp)
-	sw $s5, 24($sp)
-	sw $s6, 28($sp)
-	sw $s7, 32($sp)
-	sw $a0, 36($sp)
-	sw $a1, 40($sp)
-	sw $s0, 44($sp)
-	
-	la $s0, result
-	
-	lw $s1, 0($s0)
-	lw $s2, 4($s0)
-	lw $s3, 8($s0)
-	lw $s4, 12($s0)
-	
-	move    $a0,$s1                 # put number into correct reg for syscall
-    	li      $v0,34                  # syscall number for "print hex"
-    	syscall 
-	
-	li $a0, 32
-	li $v0, 11  # syscall number for printing character
-	syscall
-	
-	move    $a0,$s2                 # put number into correct reg for syscall
-    	li      $v0,34                  # syscall number for "print hex"
-    	syscall 
-    	
-    	li $a0, 32
-	li $v0, 11  # syscall number for printing character
-	syscall
-    	
-    	move    $a0,$s3                 # put number into correct reg for syscall
-    	li      $v0,34                  # syscall number for "print hex"
-    	syscall 
-    	
-    	li $a0, 32
-	li $v0, 11  # syscall number for printing character
-	syscall
-    	
-    	move    $a0,$s4                 # put number into correct reg for syscall
-    	li      $v0,34                  # syscall number for "print hex"
-    	syscall 
-	
-	li $a0, '\n'
-	li $v0, 11
-	syscall
-	
-	lw $ra, 0($sp)
-	lw $s1, 4($sp)
-	lw $s2, 8($sp)
-	lw $s3, 16($sp)
-	lw $s4, 20($sp)
-	lw $s5, 24($sp)
-	lw $s6, 28($sp)
-	lw $s7, 32($sp)
-	lw $a0, 36($sp)
-	lw $a1, 40($sp)
-	lw $s0, 44($sp)
-	sub $sp, $sp, -48
-	jr $ra
-	
 IS_NEW_LINE:
 sub $sp, $sp, 48
 sw $ra, 0($sp)

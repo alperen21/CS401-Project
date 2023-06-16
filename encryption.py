@@ -129,19 +129,29 @@ def encryption(key, message, T0, T1, T2, T3):
     s = [0,0,0,0]
     for i in range(4):
         s[i] = message[i] ^ key[i]
-    
+
+    print("-------whitening--------")
+    print([hex(x) for x in s])
+    print("-------whitening--------")
     
     # Apply round operation eight times
-    for i in range(8):
+    for i in range(8):  
         rkey = key_schedule(i, key)
+
+        print("-------key({})--------".format(i))
+        print([hex(elem) for elem in rkey])
+        print("-------key({})--------".format(i))
         
 
-
+        print("-------encryption({})--------".format(i))
         s = round_operation(s, rkey, T0, T1, T2, T3)
 
-        print([hex(elem) for elem in s])
 
+        print([hex(elem) for elem in s])
+        print("-------encryption({})--------".format(i))
         
+        print()
+        print()
 
         key = rkey
     
@@ -149,7 +159,7 @@ def encryption(key, message, T0, T1, T2, T3):
 
 
 key = [0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c]
-message = [0x6bc1bee2, 0x2e409f96, 0xe93d7e11, 0x7393172a]
+message = [0x75746b75, 0x2e617940, 0x73616261, 0x6e636975]
 
 # Assuming T0, T1, T2, T3 are already defined and loaded, we can get the result as
 ciphertext = encryption(key, message, T0, T1, T2, T3)
